@@ -1,0 +1,30 @@
+﻿@using SuperBlog.Models.ViewModels;
+@model LoginViewModel
+@{
+    ViewData["Title"] = "Главная";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Welcome</h1>
+    <p>Learn about <a href="https://docs.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+    <form method="post" asp-action="Login" asp-controller="User">
+        
+        <p>
+            <label>Логин</label><br />
+            <input type="text" asp-for="UserName" />
+            <span asp-validation-for="UserName" class="text-danger"></span>
+        </p>
+        <p>
+            <label>Пароль</label><br />
+            <input type="password" asp-for="Password" />
+            <span asp-validation-for="Password" class="text-danger"></span>
+        </p>
+        <p>
+            <button type="submit">Войти</button>
+        </p>
+        <div asp-validation-summary="ModelOnly"></div>
+    </form>
+    <a asp-action="Register" asp-controller="User">
+        <span>Регистрация</span>
+    </a>
+</div>

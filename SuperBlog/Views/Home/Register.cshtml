@@ -1,0 +1,54 @@
+﻿@model SuperBlog.Models.ViewModels.RegisterViewModel
+@{
+    ViewData["Title"] = "Регистрация";
+}
+
+<script src="https://ajax.aspnetcdn.com/ajax/jquery.validate/1.17.0/jquery.validate.min.js"></script>
+<script src="https://ajax.aspnetcdn.com/ajax/jquery.validation.unobtrusive/3.2.10/jquery.validate.unobtrusive.min.js"></script>
+
+<h1>Регистрация нового пользователя</h1>
+<form method="post" asp-action="Register" asp-controller="User">
+    <p>
+        <label>Имя</label>
+        <input type="text" asp-for="FirstName"/>
+        <span asp-validation-for="FirstName"></span>
+    </p>
+    <p>
+        <label>Фамилия</label>
+        <input type="text" asp-for="LastName" />
+        <span asp-validation-for="LastName"></span>
+    </p>
+    <p>
+        <label>Отчество</label>
+        <input type="text" asp-for="MiddleName" />
+        <span asp-validation-for="MiddleName"></span>
+    </p>
+    <p>
+        <label>Никнейм</label>
+        <input type="text" asp-for="UserName" />
+        <span asp-validation-for="UserName"></span>
+    </p>
+    <p>
+        <label>Пароль</label>
+        <input type="password" asp-for="Password" />
+        <span asp-validation-for="Password"></span>
+    </p>
+    <p>
+        <label>Подтвердите пароль</label>
+        <input type="password" asp-for="PasswordConfirm" />
+        <span asp-validation-for="PasswordConfirm"></span>
+    </p>
+    <p>
+        <label>Адрес электронной почты</label>
+        <input type="email" asp-for="Email" />
+        <span asp-validation-for="Email"></span>
+    </p>
+    <p>
+        <label>Дата рождения</label>
+        <input type="date" asp-for="BirthDate" />
+        <span asp-validation-for="BirthDate"></span>
+    </p>
+    <p>
+        <button type="submit">Регистрация</button>
+    </p>
+</form>
