@@ -8,7 +8,7 @@ namespace SuperBlog.Controllers
 {
     public class TagController : Controller
     {
-        public IRepository<Tag> tagRepo { get; set; }
+        private readonly IRepository<Tag> tagRepo;
 
         public TagController(IRepository<Tag> tagRepository)
         {

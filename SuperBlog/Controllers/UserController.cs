@@ -7,6 +7,7 @@ using SuperBlog.Extentions;
 using Microsoft.EntityFrameworkCore;
 using SuperBlog.Data.Repositories;
 using Microsoft.AspNetCore.Authorization;
+using SuperBlog.Models;
 
 namespace SuperBlog.Controllers
 {
@@ -73,6 +74,14 @@ namespace SuperBlog.Controllers
                 var user = mapper.Map<User>(model);
                 var existingUser = await userManager.FindByEmailAsync(user.Email);
 
+                var birthDateValidation = Validation.ValidateBirthDate(model.MakeBirthDate());
+
+                if (birthDateValidation != string.Empty)
+                {
+                    ModelState.AddModelError("Year", birthDateValidation);
+                    return View(@"\Views\Home\Register.cshtml", model);
+                }
+
                 if (existingUser != null)
                 {
                     ModelState.AddModelError("Email", "Пользователь с таким адресом электронной почты уже существует");
@@ -134,7 +143,6 @@ namespace SuperBlog.Controllers
             return View("/Views/Users/EditProfile/cshtml", newModel);
         }
 
-        [Authorize(Roles = "admin")]
         [HttpGet]
         [Route("MyFeed")]
         public async Task<IActionResult> MyFeed()
@@ -172,6 +180,8 @@ namespace SuperBlog.Controllers
             return View("/Views/Users/Users.cshtml", users);
         }
 
+        [HttpGet]
+        [Route("User")]
         public async Task<IActionResult> GetUserById(string id) 
         {
             var user = await userManager.FindByIdAsync(id);
@@ -180,5 +190,12 @@ namespace SuperBlog.Controllers
             return View("/Views/Users/UserProfile.cshtml", user);
         }
 
+        [HttpPost]
+        [Route("Logout")]
+        public async Task<IActionResult> Logout()
+        {
+            await signInManager.SignOutAsync();
+            return RedirectToAction("Index", "Home");
+        }
     }
 }

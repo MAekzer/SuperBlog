@@ -8,7 +8,8 @@ namespace SuperBlog
     {
         public MappingProfile() : base()
         {
-            CreateMap<RegisterViewModel, User>();
+            CreateMap<RegisterViewModel, User>()
+                .ForMember(u => u.BirthDate, opt => opt.MapFrom(m => m.MakeBirthDate()));
             CreateMap<UpdateUserViewModel, User>();
             CreateMap<PostViewModel, Post>();
             CreateMap<Post, PostViewModel>();

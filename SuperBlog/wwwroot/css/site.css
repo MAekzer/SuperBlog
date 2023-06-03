@@ -20,3 +20,37 @@ html {
 body {
   margin-bottom: 60px;
 }
+
+.footer {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    text-align: center;
+    height: 60px;
+    display: flex;
+    align-items: center;
+}
+
+.mrgn-r {
+    margin-right: 15px;
+}
+
+.content-vertical-center {
+    height: 50vh;
+    width: 60%;
+    margin: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+}
+
+input[type=number] {
+    -moz-appearance: textfield;
+}
