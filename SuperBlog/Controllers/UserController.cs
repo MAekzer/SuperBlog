@@ -7,7 +7,6 @@ using SuperBlog.Extentions;
 using Microsoft.EntityFrameworkCore;
 using SuperBlog.Data.Repositories;
 using Microsoft.AspNetCore.Authorization;
-using SuperBlog.Models;
 
 namespace SuperBlog.Controllers
 {
@@ -15,24 +14,33 @@ namespace SuperBlog.Controllers
     {
         private readonly UserManager<User> userManager;
         private readonly SignInManager<User> signInManager;
+        private readonly RoleManager<Role> roleManager;
         private readonly IMapper mapper;
         private readonly ISecurityRepository security;
+        private readonly IRepository<Post> postRepo;
 
-        public UserController(UserManager<User> userManager, SignInManager<User> signInManager, IMapper mapper, ISecurityRepository security)
+        public UserController(
+            UserManager<User> userManager,
+            SignInManager<User> signInManager,
+            IMapper mapper,
+            ISecurityRepository security,
+            IRepository<Post> postRepo,
+            RoleManager<Role> roleManager)
         {
             this.userManager = userManager;
             this.signInManager = signInManager;
             this.mapper = mapper;
             this.security = security;
+            this.postRepo = postRepo;
+            this.roleManager = roleManager;
         }
 
         [HttpPost]
-        [Route("Login")]
         public async Task<IActionResult> Login(LoginViewModel model)
         {
             if (ModelState.IsValid)
             {
-                await security.CreateRoles();
+                //await security.CreateRoles();
                 var user = await userManager.FindByNameAsync(model.UserName);
 
                 if (user == null)
@@ -58,14 +66,12 @@ namespace SuperBlog.Controllers
         }
 
         [HttpGet]
-        [Route("Register")]
         public IActionResult Register()
         {
             return View("/Views/Home/Register.cshtml");
         }
 
         [HttpPost]
-        [Route("Register")]
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
             if (ModelState.IsValid)
@@ -73,14 +79,6 @@ namespace SuperBlog.Controllers
                 await signInManager.SignOutAsync();
                 var user = mapper.Map<User>(model);
                 var existingUser = await userManager.FindByEmailAsync(user.Email);
-
-                var birthDateValidation = Validation.ValidateBirthDate(model.MakeBirthDate());
-
-                if (birthDateValidation != string.Empty)
-                {
-                    ModelState.AddModelError("Year", birthDateValidation);
-                    return View(@"\Views\Home\Register.cshtml", model);
-                }
 
                 if (existingUser != null)
                 {
@@ -115,45 +113,82 @@ namespace SuperBlog.Controllers
             return View(@"\Views\Home\Register.cshtml", model);
         }
 
+        [Authorize]
         [HttpGet]
-        [Route("UpdateUser")]
-        public async Task<IActionResult> Update()
+        public async Task<IActionResult> Update(string id)
         {
-            var _user = User;
-            if (_user == null) return RedirectToAction("Index", "Home");
-
-            var user = await userManager.GetUserAsync(User);
+            var user = await userManager.FindByIdAsync(id);
             if (user == null) return RedirectToAction("Index", "Home");
 
-            var model = mapper.Map<UpdateUserViewModel>(user);
+            var model = mapper.Map<EditUserViewModel>(user);
+
+            var roles = roleManager.Roles;
+            var userRoles = await roleManager.GetRoles(user, userManager);
+
+            foreach (var role in roles)
+            {
+                var roleModel = new RoleCheckboxViewModel { DispayName = role.DisplayName, Id = role.Id, IsChecked = false };
+                if (userRoles.Any(r => r.Id == role.Id))
+                    roleModel.IsChecked = true;
+                model.Roles.Add(roleModel);
+            }
+
             return View("/Views/Users/EditProfile.cshtml", model);
         }
 
+        [Authorize]
         [HttpPost]
-        [Route("UpdateUser")]
-        public async Task<IActionResult> Update(UpdateUserViewModel model)
+        public async Task<IActionResult> Update(EditUserViewModel model)
         {
             if (!ModelState.IsValid) return View("/Views/Users/EditProfile", model);
 
-            var user = await userManager.GetUserAsync(User);
+            var user = await userManager.FindByIdAsync(model.Id.ToString());
             if (user == null) return RedirectToAction("Index", "Home");
 
+            var existingUser = await userManager.FindByEmailAsync(model.Email);
+
+            if (existingUser != null && existingUser.Id != model.Id)
+            {
+                ModelState.AddModelError("Email", "Пользователь с таким адресом электронной почты уже существует");
+                return View(@"\Views\Users\EditProfile.cshtml", model);
+            }
+
+            existingUser = await userManager.FindByNameAsync(model.UserName);
+
+            if (existingUser != null && existingUser.Id != model.Id)
+            {
+                ModelState.AddModelError("UserName", "Пользователь с таким логином уже существует");
+                return View(@"\Views\Users\EditProfile.cshtml", model);
+            }
+
             user.Update(model);
-            var newModel = mapper.Map<UpdateUserViewModel>(user);
-            return View("/Views/Users/EditProfile/cshtml", newModel);
+
+            foreach (var roleModel in model.Roles)
+            {
+                var role = await roleManager.Roles.FirstOrDefaultAsync(r => r.Id == roleModel.Id);
+                if (roleModel.IsChecked || roleModel.DispayName == "Пользователь")
+                    await userManager.AddToRoleAsync(user, role.Name);
+                else
+                    await userManager.RemoveFromRoleAsync(user, role.Name);
+            }
+
+            await userManager.UpdateAsync(user);
+            return RedirectToAction("UserProfile", "User", new {id = model.Id });
         }
 
+        [Authorize]
         [HttpGet]
-        [Route("MyFeed")]
         public async Task<IActionResult> MyFeed()
         {
             var _user = User;
             if (_user != null)
             {
                 var user = await userManager.GetUserAsync(_user);
+                var posts = (await postRepo.GetAll().Include(p => p.Tags).Include(p => p.User)
+                    .Where(p => p.UserId == user.Id).ToListAsync()).OrderBy(p => p.GetTime()).ToList();
                 if (user != null)
                 {
-                    var model = new UserViewModel { User = user };
+                    var model = new UserPostsViewModel { User = user, Posts = posts };
                     return View("/Views/Users/MyFeed.cshtml", model);
                 }
                 return RedirectToAction("Index", "Home");
@@ -161,37 +196,109 @@ namespace SuperBlog.Controllers
             return RedirectToAction("Index", "Home");
         }
 
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> MyProfile()
+        {
+            var user = await userManager.GetUserAsync(User);
+            if (user == null) return View("/View/Error/UserNotFound");
+
+            var roles = await roleManager.GetRoles(user, userManager);
+
+            var posts = await postRepo.GetAll().Include(p => p.Tags).Where(p => p.UserId == user.Id).ToListAsync();
+            var model = new UserViewModel { User = user, Posts = posts, Roles = roles, PostCount = posts.Count };
+
+            return View("/Views/Users/MyProfile.cshtml", model);
+        }
+
+        [Authorize]
         [HttpPost]
-        [Route("DeleteUser")]
-        public async Task<IActionResult> DeleteUser(string id)
+        public async Task<IActionResult> Delete(string id)
         {
             var user = await userManager.FindByIdAsync(id);
-            if (user != null) await userManager.DeleteAsync(user);
+            var currentUser = await userManager.GetUserAsync(User);
 
-            return View("/Views/Admin/UserDeleted.cshtml", user);
+            if (currentUser == null || user == null) return View("/Views/Error/UserNotFound.cshtml");
+
+            if (currentUser.Id == user.Id)
+            {
+                await signInManager.SignOutAsync();
+                await userManager.DeleteAsync(user);
+                return RedirectToAction("Index", "Home");
+            }
+
+            await userManager.DeleteAsync(user);
+            return View("/Views/Users/Users.cshtml");
         }
 
         [HttpGet]
-        [Route("AllUsers")]
-        public async Task<IActionResult> GetUsers()
+        public async Task<IActionResult> Users()
         {
-            var users = await userManager.Users.ToListAsync();
+            var users = userManager.Users;
+            var model = new UsersViewModel();
 
-            return View("/Views/Users/Users.cshtml", users);
-        }
+            foreach (var user in users)
+            {
+                int postCount = await postRepo.GetAll().Where(p => p.User.Id == user.Id).CountAsync();
+                var roles = await roleManager.GetRoles(user, userManager);
+                var userModel = new UserViewModel { User = user, PostCount = postCount, Roles = roles};
+                model.Users.Add(userModel);
+            }
 
-        [HttpGet]
-        [Route("User")]
-        public async Task<IActionResult> GetUserById(string id) 
-        {
-            var user = await userManager.FindByIdAsync(id);
-            if (user == null) return View("Views/Users/UserNotFound");
-
-            return View("/Views/Users/UserProfile.cshtml", user);
+            return View("/Views/Users/Users.cshtml", model);
         }
 
         [HttpPost]
-        [Route("Logout")]
+        public async Task<IActionResult> Users(UsersViewModel model)
+        {
+            if (model == null || model.SearchCriterion == null || string.IsNullOrEmpty(model.SearchParam))
+                return RedirectToAction("Users", "User");
+
+            var users = userManager.Users;
+            var param = model.SearchParam.ToString();
+            switch(model.SearchCriterion)
+            {
+                case SearchCriteria.Имя:
+                    users = users.Where(u => u.FirstName.Contains(param) || u.LastName.Contains(param) || u.MiddleName.Contains(param));
+                    break;
+                case SearchCriteria.Email:
+                    users = users.Where(u => u.Email.Contains(param));
+                    break;
+                case SearchCriteria.Логин:
+                    users = users.Where(u => u.UserName.Contains(param));
+                    break;
+            }
+
+            foreach (var user in users)
+            {
+                int postCount = await postRepo.GetAll().Where(p => p.User.Id == user.Id).CountAsync();
+                var roles = await roleManager.GetRoles(user, userManager);
+                var userModel = new UserViewModel { User = user, PostCount = postCount, Roles = roles };
+                model.Users.Add(userModel);
+            }
+
+            return View("/Views/Users/Users.cshtml", model);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> UserProfile(string id) 
+        {
+            var currentUser = await userManager.GetUserAsync(User);
+            var user = await userManager.FindByIdAsync(id);
+
+            if (user == null) return View("/View/Error/UserNotFound");
+            if (currentUser != null && (currentUser.Id == user.Id))
+                return RedirectToAction("MyProfile", "User");
+
+            var roles = await roleManager.GetRoles(user, userManager);
+
+            var posts = await postRepo.GetAll().Include(p => p.Tags).Where(p => p.UserId == user.Id).ToListAsync();
+            var model = new UserViewModel { User = user, Posts = posts, Roles = roles, PostCount = posts.Count };
+
+            return View("/Views/Users/UserProfile.cshtml", model);
+        }
+
+        [HttpPost]
         public async Task<IActionResult> Logout()
         {
             await signInManager.SignOutAsync();

@@ -29,7 +29,7 @@ namespace SuperBlog.Data.Repositories
             return _db.Tags.AsQueryable();
         }
 
-        public async Task<Tag?> GetByIdAsync(string id)
+        public async Task<Tag?> GetByIdAsync(Guid id)
         {
             return await _db.Tags.FindAsync(id);
         }

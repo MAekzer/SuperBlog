@@ -1,5 +1,57 @@
-﻿@*
+﻿@model SuperBlog.Models.ViewModels.WriteCommentViewModel
+@*
     For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 *@
 @{
+    ViewData["Title"] = $"New Comment for {Model.Post.Title}";
+}
+<a class="btn btn-primary mb-2" style="margin-left: 10%;" href="javascript:history.back()">Назад</a>
+<div class="card mx-auto mb-4" style="width: 80%;">
+    <div class="card-body text-center">
+        <h5 class="card-title">@Model.Post.Title</h5>
+        <p class="card-text">@Model.Post.Content</p>
+    </div>
+    <div class="card-footer d-flex justify-content-between">
+        <div class="text-start">
+            <small class="my-0">@Model.Post.User.LastName @Model.Post.User.FirstName</small><br />
+            <small class="my-0">@Model.Post.User.Email</small>
+        </div>
+        <div class="text-center">
+            @if (Model.Post.IsRedacted)
+            {
+                <small class="my-0">Отредактировано</small>
+
+                <br />
+                <small class="my-0">@Model.Post.RedactionTime.Value.ToShortDateString()</small>
+
+                <br />
+                <small class="my-0">@Model.Post.RedactionTime.Value.ToShortTimeString()</small>
+
+                <br />
+            }
+            else
+            {
+                <small class="my-0">@Model.Post.CreationTime.ToShortDateString()</small>
+
+                <br />
+                <small class="my-0">@Model.Post.CreationTime.ToShortTimeString()</small>
+            }
+        </div>
+    </div>
+</div>
+<form method="post" asp-action="Write" asp-controller="Comment" style="width: 80%;" class="mx-auto">
+    <input asp-for="PostId" type="text" hidden value="@Model.Post.Id"/>
+    <div class="mb-3">
+        <label class="form-label">Текст комментария</label>
+        <textarea asp-for="Content" class="form-control" rows="3"></textarea>
+        <span asp-validation-for="Content" class="text-danger"></span>
+    </div>
+    <div class="text-center mb-3">
+        <button type="submit" class="btn btn-primary btn-lg">Отправить</button>
+    </div>
+</form>
+
+@section Scripts {
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
 }

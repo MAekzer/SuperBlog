@@ -32,12 +32,10 @@ namespace SuperBlog.Data.Repositories
             return posts;
         }
 
-        public async Task<Post?> GetByIdAsync(string id)
+        public async Task<Post?> GetByIdAsync(Guid id)
         {
-            var post = await _db.Posts.FindAsync(id);
-            return post;
+            return await _db.Posts.Include(p => p.Tags).FirstOrDefaultAsync(p => p.Id == id);
         }
-
         public async Task<Post?> GetByNameAsync(string name)
         {
             return await _db.Posts.FirstOrDefaultAsync(p => p.Title == name);

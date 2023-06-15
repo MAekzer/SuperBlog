@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using SuperBlog.Models.Entities;
-
+using System.Security.Claims;
 namespace SuperBlog.Data.Repositories
 {
     public class SecurityRepository : ISecurityRepository
@@ -20,7 +20,23 @@ namespace SuperBlog.Data.Repositories
         // Для последующих запусков предполагается, что юзер-админ и все роли уже есть в базе данных
         public async Task CreateRoles()
         {
-            string[] roleNames = { "admin", "moderator", "user" };
+            List<Role> roles = new();
+
+            var admin = new Role("admin", "Администратор",
+                "Высшая роль в приложении. Имеет право на все операции с любыми сущностями"
+            );
+            roles.Add( admin );
+
+            var moderator = new Role("moderator", "Модератор",
+                "Роль модератора приложения. Имеет право на удаление и редактирование любых статей и комментариев"
+            );
+            roles.Add( moderator );
+
+            var user = new Role("user", "Пользователь",
+                "Стандартная роль в приложении. Имеет право на операции со своими статьями, комментариями и профилем"
+            );
+            roles.Add( user );
+
             IdentityResult roleResult;
             IConfiguration configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
@@ -28,12 +44,12 @@ namespace SuperBlog.Data.Repositories
             .AddJsonFile("appsettings.json")
             .Build();
 
-            foreach (var roleName in roleNames)
+            foreach (var role in roles)
             {
-                var roleExist = await roleManager.RoleExistsAsync(roleName);
+                var roleExist = await roleManager.RoleExistsAsync(role.Name);
                 if (!roleExist)
                 {
-                    roleResult = await roleManager.CreateAsync(new Role(roleName));
+                    roleResult = await roleManager.CreateAsync(role);
                 }
             }
             
@@ -78,27 +94,29 @@ namespace SuperBlog.Data.Repositories
             }
         }
 
-        public IQueryable<Role> GetRoles()
+        public async Task<bool> IsSameUserOrModerator(ClaimsPrincipal User, Guid CompareId)
         {
-            throw new NotImplementedException();
+            var user = await userManager.GetUserAsync(User);
+            if (user == null) return false;
+            if (user.Id == CompareId) return true;
+            if (User.IsInRole("moderator")) return true;
+            return false;
         }
 
-        public IEnumerable<Role> GetUserRole(string userId)
+        public async Task<bool> IsSameUserOrAdmin(ClaimsPrincipal User, Guid CompareId)
         {
-            throw new NotImplementedException();
-        }
-
-        public IQueryable<User> GetUsers(string role)
-        {
-            throw new NotImplementedException();
+            var user = await userManager.GetUserAsync(User);
+            if (user == null) return false;
+            if (user.Id == CompareId) return true;
+            if (User.IsInRole("admin")) return true;
+            return false;
         }
     }
 
     public interface ISecurityRepository
     {
         public Task CreateRoles();
-        public IQueryable<Role> GetRoles();
-        public IEnumerable<Role> GetUserRole(string userId);
-        public IQueryable<User> GetUsers(string role);
+        public Task<bool> IsSameUserOrModerator(ClaimsPrincipal User, Guid CompareId);
+        public Task<bool> IsSameUserOrAdmin(ClaimsPrincipal User, Guid CompareId);
     }
 }

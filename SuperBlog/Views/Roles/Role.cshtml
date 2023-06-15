@@ -1,0 +1,86 @@
+﻿@using SuperBlog.Extentions;
+@model SuperBlog.Models.ViewModels.RoleViewModel
+@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    ViewData["Title"] = Model.Role.Name;
+}
+<div class="card mx-auto" style="width: 80%;">
+    <div class="top-right btn-group">
+        @if (User.IsInRole("admin"))
+        {
+            <a asp-action="Update" asp-controller="Role" asp-route-id="@Model.Role.Id" class="btn btn-outline-warning">Редактировать</a>
+            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#delete-role-confirm">Удалить</button>
+            <div class="modal fade" id="delete-role-confirm" tabindex="-1" aria-labelledby="modal-delete-role-title" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h1 class="modal-title fs-5" id="modal-delete-role-title">Удаление профиля</h1>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body text-center">
+                            Вы действительно хотите удалить свой профиль?<br />
+                            Отменить это действие будет невозможно.
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Назад</button>
+                            <form method="post" asp-action="Delete" asp-controller="Role" asp-route-id="@Model.Role.Id">
+                                <button type="submit" class="btn btn-danger">Удалить</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+    <div class="card-body">
+        <h5 class="card-title">@Model.Role.DisplayName</h5>
+        <h6 class="card-subtitle mb-2 text-body-secondary">@Model.Role.Name</h6>
+        <p class="card-text">@Model.Role.Description</p>
+    </div>
+</div>
+<h2 class="my-3">Пользователи с ролью @Model.Role.DisplayName</h2>
+<div class="d-flex justify-content-center flex-wrap">
+    @foreach (var user in Model.Users)
+    {
+        <div class="card me-3 mb-3" style="width: 26rem;">
+            <div class="card-body">
+                <div class="row mb-2">
+                    <h5 class="card-title col-9">
+                        <a asp-area="" asp-action="UserProfile" asp-controller="User" asp-route-id="@user.Id" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">
+                            @user.GetFullName()
+                        </a>
+                    </h5>
+                    <div class="btn-group top-right" role="group">
+                        @if (User.IsInRole("admin"))
+                        {
+                            <a class="btn btn-outline-warning btn-sm" asp-action="Update" asp-controller="User" asp-route-id="@user.Id">Ред.</a>
+                            <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#delete-confirm-@user.Id">Удалить</button>
+                            <div class="modal fade" id="delete-confirm-@user.Id" tabindex="-1" aria-labelledby="modal-title" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h1 class="modal-title fs-5" id="modal-title">Удаление статьи</h1>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body text-center">
+                                            Вы действительно хотите удалить пользователя @user.GetFullName()?<br />
+                                            Отменить это действие будет невозможно.
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Назад</button>
+                                            <form method="post" asp-action="Delete" asp-controller="User" asp-route-id="@user.Id">
+                                                <button type="submit" class="btn btn-danger">Удалить</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>

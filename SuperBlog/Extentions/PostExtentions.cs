@@ -7,12 +7,20 @@ namespace SuperBlog.Extentions
 {
     public static class PostExtentions
     {
-        public static void Update(this Post post, PostViewModel model)
+        public static void Update(this Post post, EditPostViewModel model)
         {
             post.Title = model.Title;
             post.Content = model.Content;
             post.IsRedated = true;
             post.RedactionTime = DateTime.Now;
+        }
+
+        public static DateTime? GetTime(this Post post)
+        {
+            if (post.IsRedated)
+                return post.RedactionTime;
+            else
+                return post.CreationTime;
         }
     }
 }

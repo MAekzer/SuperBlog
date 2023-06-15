@@ -11,12 +11,12 @@
         <form method="post" asp-action="Login" asp-controller="User">
             <p>
                 <label>Логин</label><br />
-                <input type="text" asp-for="UserName" />
+                <input type="text" asp-for="UserName" class="form-control"/>
                 <span asp-validation-for="UserName" class="text-danger"></span>
             </p>
             <p>
                 <label>Пароль</label><br />
-                <input type="password" asp-for="Password" />
+                <input type="password" asp-for="Password" class="form-control"/>
                 <span asp-validation-for="Password" class="text-danger"></span>
             </p>
             <p class="btn-group">

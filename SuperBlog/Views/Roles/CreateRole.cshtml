@@ -1,0 +1,41 @@
+﻿@model SuperBlog.Models.ViewModels.CreateRoleViewModel
+@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    ViewData["Title"] = "Новая Роль";
+}
+
+<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+<script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+
+<h1 class="text-center mb-5">Добавление новой роли</h1>
+<form method="post" asp-action="Create" asp-controller="Role">
+    <div class="mb-3">
+        <div class="input-group">
+            <span class="input-group-text">Системное название роли</span>
+            <input type="text" class="form-control" asp-for="Name"><br />
+        </div>
+        <span asp-validation-for="Name" class="text-danger"></span>
+    </div>
+    
+    <div class="mb-3">
+        <div class="input-group">
+            <span class="input-group-text">Название роли для отображения</span>
+            <input type="text" class="form-control" asp-for="DisplayName"><br />
+        </div>
+        <span asp-validation-for="DisplayName" class="text-danger"></span>
+    </div>
+    
+    <div class="mb-3">
+        <div class="input-group">
+            <span class="input-group-text">Описание</span>
+            <textarea class="form-control" asp-for="Description" rows="3"></textarea><br />
+        </div>
+        <span asp-validation-for="Description" class="text-danger"></span>
+    </div>
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="text-center">
+        <button type="submit" class="text-center btn btn-primary btn-lg mt-4">Добавить</button>
+    </div>
+</form>

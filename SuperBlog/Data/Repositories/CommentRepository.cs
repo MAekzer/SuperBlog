@@ -25,10 +25,10 @@ namespace SuperBlog.Data.Repositories
 
         public IQueryable<Comment> GetAll()
         {
-            return _db.Comments;
+            return _db.Comments.AsQueryable();
         }
 
-        public async Task<Comment?> GetByIdAsync(string id)
+        public async Task<Comment?> GetByIdAsync(Guid id)
         {
             return await _db.Comments.FindAsync(id);
         }

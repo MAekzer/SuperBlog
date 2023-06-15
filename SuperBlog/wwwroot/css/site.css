@@ -30,15 +30,29 @@ body {
     height: 60px;
     display: flex;
     align-items: center;
+    background-color: white;
 }
 
 .mrgn-r {
     margin-right: 15px;
 }
 
+.pd-l-15 {
+    padding-left: 15%
+}
+
+.top-right {
+    position: absolute;
+    width: 33%;
+    top: 0;
+    right: 0;
+    padding: 0;
+}
+
 .content-vertical-center {
     height: 50vh;
-    width: 60%;
+    max-width: 80%;
+    width: 400px;
     margin: auto;
     display: flex;
     flex-direction: column;

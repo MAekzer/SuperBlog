@@ -1,7 +1,56 @@
-﻿@model SuperBlog.Models.ViewModels.PostViewModel
+﻿@model SuperBlog.Models.ViewModels.CreatePostViewModel
 @*
     For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 *@
 @{
     ViewData["Title"] = "New Post";
+}
+<h2 class="text-center mb-4">Создание новой статьи</h2>
+<form method="post" asp-area="" asp-action="Create" asp-controller="Post">
+    <div class="mb-3">
+        <div class="input-group">
+            <span class="input-group-text" id="basic-addon1">Название статьи</span>
+            <input type="text" class="form-control" asp-for="Title" />
+        </div>
+        <span asp-validation-for="Title" class="text-danger mb-3"></span>
+    </div>
+    <div class="my-2">
+        <p>
+            <button class="btn btn-primary" type="button" data-bs-toggle="collapse" data-bs-target="#tags" aria-expanded="false" aria-controls="tags">
+                Отметьте подходящие теги для вашей статьи
+            </button>
+        </p>
+        <div class="collapse mb-3" id="tags">
+            @for (int i = 0; i < Model.Tags.Count; i++)
+            {
+                <div class="form-check form-check-inline">
+                    <input class="form-check-input" type="checkbox" id="tag-@Model.Tags[i]" asp-for="Tags[i].IsChecked" />
+                    <label class="form-check-label" for="tag-@Model.Tags[i]">
+                        @Model.Tags[i].Name
+                    </label>
+                    <input type="text" hidden asp-for="Tags[i].Id" value="@Model.Tags[i].Id">
+                    <input type="text" hidden asp-for="Tags[i].Name" value="@Model.Tags[i].Name">
+                </div>
+            }
+
+        </div>
+    </div>
+    <div class="mb-4">
+        <div class="input-group">
+            <span class="input-group-text">Содержание статьи</span>
+            <textarea maxlength="10000" class="form-control" style="height: 350px;" aria-label="Содержание статьи" asp-for="Content"></textarea>
+        </div>
+        <span asp-validation-for="Content" class="text-danger"></span>
+    </div>
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="text-center">
+        <button class="btn btn-outline-success btn-lg" type="submit">Опубликовать</button>
+        <a asp-action="MyFeed" asp-controller="User" class="btn btn-outline-danger btn-lg">Отмена</a>
+    </div>
+</form>
+
+@section Scripts {
+    @{
+    <partial name="_ValidationScriptsPartial" />
+    }
 }

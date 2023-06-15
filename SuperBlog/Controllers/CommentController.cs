@@ -1,8 +1,10 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SuperBlog.Data.Repositories;
+using SuperBlog.Extentions;
 using SuperBlog.Models.Entities;
 using SuperBlog.Models.ViewModels;
 
@@ -24,73 +26,54 @@ namespace SuperBlog.Controllers
         }
 
         [HttpGet]
-        [Route("PostComments")]
-        public async Task<IActionResult> GetComments(string postId)
-        {
-            var post = await postRepo.GetByIdAsync(postId);
-            if (post == null) return View("/Views/Posts/PostNotFound.cshtml");
-
-            var comments = commentRepo.GetAll().Where(c => c.PostId.Equals(postId)).ToList();
-
-            var model = new CommentsViewModel { Post = post, Comments = comments };
-            return View("/Views/Comments/CommentSection.cshtml", model);
-        }
-
-        [HttpGet]
-        [Route("Comment")]
-        public async Task<IActionResult> GetComment(string id)
-        {
-            var comment = await postRepo.GetByIdAsync(id);
-            if (comment == null) return View("/Views/Comments/CommentNotFound.cshtml");
-
-            return View("/Views/Comments/Comment.cshtml", comment);
-        }
-
-        [HttpGet]
-        [Route("EditComment")]
-        public async Task<IActionResult> Edit(string id)
+        public async Task<IActionResult> Edit(Guid id)
         {
             var comment = await commentRepo.GetByIdAsync(id);
             if (comment == null) return View("/Views/Comments/CommentNotFound.cshtml");
 
-            var model = new WriteCommentViewModel { Content = comment.Content };
+            var post = await postRepo.GetAll().Include(p => p.User).Include(p => p.Tags).FirstOrDefaultAsync(p => p.Id == comment.PostId);
+            var postmodel = mapper.Map<PostViewModel>(post);
+
+            var model = new EditCommentViewModel { Content = comment.Content, Id =  comment.Id, Post = postmodel};
+
+            return View("/Views/Comments/EditComment.cshtml", model);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Edit(EditCommentViewModel model)
+        {
+            var comment = await commentRepo.GetByIdAsync(model.Id);
+            if (comment == null) return View("/Views/Error/CommentNotFound.cshtml");
+
+            comment.Update(model);
+            await commentRepo.UpdateAsync(comment);
+
+            return RedirectToAction("Post", "Post", new { id = comment.PostId });
+        }
+
+        [Authorize]
+        [HttpGet]
+        public async Task<IActionResult> Write(Guid postId)
+        {
+            var post = await postRepo.GetAll().Include(p => p.User).FirstOrDefaultAsync(p => p.Id == postId);
+            if (post == null) 
+                return RedirectToAction("Index", "Home");
+
+            var postModel = mapper.Map<PostViewModel>(post);
+            var model = new WriteCommentViewModel { Post = postModel };
 
             return View("/Views/Comments/WriteComment.cshtml", model);
         }
 
+        [Authorize]
         [HttpPost]
-        [Route("EditComment")]
-        public async Task<IActionResult> Edit(WriteCommentViewModel model, string commentId, string postId)
+        public async Task<IActionResult> Write(WriteCommentViewModel model)
         {
-            var comment = await commentRepo.GetByIdAsync(commentId);
-            if (comment == null) return View("/Views/Comments/CommentNotFound.cshtml");
-
-            comment.IsRedacted = true;
-            comment.RedactionTime = DateTime.Now;
-            comment.Content = model.Content;
-
-            await commentRepo.UpdateAsync(comment);
-            var post = await postRepo.GetByIdAsync(postId);
-
-            return View("/Views/Posts/Post.cshtml", post);
-        }
-
-        [HttpGet]
-        [Route("NewComment")]
-        public async Task<IActionResult> Write(string postId)
-        {
-            return View("/Views/Comments/WriteComment.cshtml");
-        }
-
-        [HttpPost]
-        [Route("NewComment")]
-        public async Task<IActionResult> Write(WriteCommentViewModel model, string postId)
-        {
-            var post = await postRepo.GetByIdAsync(postId);
+            var post = await postRepo.GetByIdAsync(model.PostId);
             var user = await userManager.GetUserAsync(User);
             if (post == null || user == null) return RedirectToAction("Index", "Home");
 
-            var comment = new Comment
+            var comment = new Comment 
             {
                 Content = model.Content,
                 Post = post,
@@ -98,19 +81,19 @@ namespace SuperBlog.Controllers
             };
 
             await commentRepo.AddAsync(comment);
-            return View("/Views/Comments/Comment.cshtml", comment);
+            return RedirectToAction("Post", "Post", new { id = model.PostId });
         }
 
         [HttpPost]
-        [Route("DeleteComment")]
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> Delete(Guid id)
         {
             var comment = await commentRepo.GetByIdAsync(id);
-            if (comment == null) return View("/Views/Comments/CommentNotFound.cshtml");
-            var post = await postRepo.GetAll().FirstOrDefaultAsync(p => p.Id == comment.PostId);
+            if (comment == null) return View("/Views/Error/CommentNotFound.cshtml");
+
+            var postId = comment.PostId;
 
             await commentRepo.DeleteAsync(comment);
-            return View("/Views/Posts/Post.cshtml", post);
+            return RedirectToAction("Post", "Post", new { id = postId });
         }
     }
 }

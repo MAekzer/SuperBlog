@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -8,6 +9,7 @@ using SuperBlog.Data.Repositories;
 using SuperBlog.Extentions;
 using SuperBlog.Models.Entities;
 using SuperBlog.Models.ViewModels;
+using System.Xml.Linq;
 
 namespace SuperBlog.Controllers
 {
@@ -17,50 +19,58 @@ namespace SuperBlog.Controllers
         private readonly UserManager<User> userManager;
         private readonly IRepository<Post> postRepo;
         private readonly IRepository<Tag> tagRepo;
+        private readonly IRepository<Comment> commentRepo;
 
-        public PostController(IRepository<Post> postRepo, UserManager<User> userManager, IMapper mapper, IRepository<Tag> tagRepo)
+        public PostController(
+            IRepository<Post> postRepo,
+            UserManager<User> userManager,
+            IMapper mapper,
+            IRepository<Tag> tagRepo,
+            IRepository<Comment> commentRepo)
         {
             this.postRepo = postRepo;
             this.userManager = userManager;
             this.mapper = mapper;
             this.tagRepo = tagRepo;
+            this.commentRepo = commentRepo;
         }
 
+        [Authorize]
         [HttpGet]
-        [Route("CreatePost")]
         public async Task<IActionResult> Create()
         {
             var user = await userManager.GetUserAsync(User);
             if (user == null) return RedirectToAction("Index", "Home");
 
-            var model = new PostViewModel { User = user };
+            var model = new CreatePostViewModel { UserId = user.Id };
+            var tags = await tagRepo.GetAll().ToListAsync();
 
-            return View("/Views/Account/NewPost.cshtml", model);
+            foreach (var tag in tags)
+            {
+                var tagModel = mapper.Map<TagCheckboxViewModel>(tag);
+                model.Tags.Add(tagModel);
+            }
+
+            return View("/Views/Posts/NewPost.cshtml", model);
         }
 
+        [Authorize]
         [HttpPost]
-        [Route("CreatePost")]
-        public async Task<IActionResult> Create(PostViewModel model)
+        public async Task<IActionResult> Create(CreatePostViewModel model)
         {
             var user = await userManager.GetUserAsync(User);
             if (user == null) return RedirectToAction("Index", "Home");
 
-            model.User = user;
-            if (!ModelState.IsValid) return View("/Views/Account/NewPost.cshtml", model);
+            model.UserId = user.Id;
 
             var newPost = mapper.Map<Post>(model);
-            newPost.User = user;
-            var tagNames = model.GetTags();
-
-            foreach (var tagName in tagNames)
+            foreach (var tagModel in model.Tags)
             {
-                var tag = await tagRepo.GetByNameAsync(tagName);
-                if (tag == null)
+                if (tagModel.IsChecked)
                 {
-                    tag = new Tag { Name = tagName };
-                    await tagRepo.AddAsync(tag);
+                    var tag = await tagRepo.GetByIdAsync(tagModel.Id);
+                    newPost.Tags.Add(tag);
                 }
-                newPost.Tags.Add(tag);
             }
 
             await postRepo.AddAsync(newPost);
@@ -68,89 +78,135 @@ namespace SuperBlog.Controllers
             return RedirectToAction("MyFeed", "User");
         }
 
+        [Authorize]
         [HttpGet]
-        [Route("UpdatePost")]
-        public async Task<IActionResult> Update(string id)
+        public async Task<IActionResult> Update(Guid id)
         {
             var post = await postRepo.GetByIdAsync(id);
 
             var currentUser = await userManager.GetUserAsync(User);
-            if (currentUser == null || currentUser.Id != post.UserId) return RedirectToAction("Index", "Home");
+            if (post == null || currentUser == null) return RedirectToAction("Index", "Home");
+            if (currentUser.Id != post.UserId && User.IsInRole("moderator")) return RedirectToAction("MyFeed", "User");
 
-            var model = mapper.Map<PostViewModel>(post);
-            return View("/Views/Account/EditPost.cshtml", model);
+            var model = mapper.Map<EditPostViewModel>(post);
+            var tags = await tagRepo.GetAll().ToListAsync();
+
+            foreach (var tag in tags)
+            {
+                var tagModel = new TagCheckboxViewModel { Id = tag.Id, Name = tag.Name, IsChecked = false};
+                if (post.Tags.Contains(tag))
+                {
+                    tagModel.IsChecked = true;
+                }
+                model.Tags.Add(tagModel);
+            }
+
+            return View("/Views/Posts/EditPost.cshtml", model);
         }
 
+        [Authorize]
         [HttpPost]
-        [Route("UpdatePost")]
-        public async Task<IActionResult> Update(PostViewModel model, string id)
+        public async Task<IActionResult> Update(EditPostViewModel model)
         {
             var currentUser = await userManager.GetUserAsync(User);
-            if (currentUser == null) return RedirectToAction("Index", "Home");
+            var post = await postRepo.GetByIdAsync(model.Id);
 
-            var post = await postRepo.GetByIdAsync(id);
-            if (currentUser.Id != post.UserId) return RedirectToAction("Index", "Home");
+            if (currentUser == null || post == null) return RedirectToAction("Index", "Home");
+            if (currentUser.Id != post.UserId && !User.IsInRole("moderator")) return RedirectToAction("MyFeed", "User");
 
             post.Update(model);
 
             post.Tags = new List<Tag>();
-            var newTags = model.GetTags();
-
-            foreach (var tagName in newTags)
+            foreach (var tagModel in model.Tags)
             {
-                var tag = await tagRepo.GetByNameAsync(tagName);
-                if (tag == null)
+                if (tagModel.IsChecked)
                 {
-                    tag = new Tag { Name = tagName };
-                    await tagRepo.AddAsync(tag);
+                    var tag = await tagRepo.GetByIdAsync(tagModel.Id);
+                    post.Tags.Add(tag);
                 }
-                post.Tags.Add(tag);
             }
 
             await postRepo.UpdateAsync(post);
             return RedirectToAction("MyFeed", "User");
         }
 
+        [Authorize]
         [HttpPost]
-        [Route("DeletePost")]
-        public async Task<IActionResult> Delete(string id)
+        public async Task<IActionResult> Delete(Guid id)
         {
             var post = await postRepo.GetByIdAsync(id);
             if (post != null) await postRepo.DeleteAsync(post);
 
-            return RedirectToAction("Index", "Home");
+            return RedirectToAction("MyFeed", "User");
         }
 
         [HttpGet]
-        [Route("AllPosts")]
         public async Task<IActionResult> Posts()
         {
-            var posts = await postRepo.GetAll().ToListAsync();
+            var user = await userManager.GetUserAsync(User);
+            var posts = await postRepo.GetAll().Include(p => p.User).Include(p => p.Tags).ToListAsync();
+            var tags = tagRepo.GetAll();
 
-            return View("/Views/Posts/AllPosts.cshtml");
+            var model = new PostsViewModel { Posts = posts, User = user };
+            foreach (var tag in tags)
+            {
+                var tagModel = new TagCheckboxViewModel { Id = tag.Id, Name = tag.Name, IsChecked = false };
+                model.Tags.Add(tagModel);
+            }
+
+            return View("/Views/Posts/AllPosts.cshtml", model);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Posts(PostsViewModel model)
+        {
+            var user = await userManager.GetUserAsync(User);
+            IQueryable<Post> posts = postRepo.GetAll().Include(p => p.User).Include(p => p.Tags);
+
+            if (!string.IsNullOrEmpty(model.SearchPrompt))
+                posts = postRepo.GetAll().Where(p => p.Title.Contains(model.SearchPrompt));
+
+            if (model.Tags.Count > 0)
+            {
+                var tags = new List<Tag>();
+                foreach (var tagModel in model.Tags)
+                {
+                    if (tagModel.IsChecked)
+                    {
+                        posts = posts.Where(p => p.Tags.Any(t => t.Id == tagModel.Id));
+                    }
+                }
+            }
+            model.Posts = await posts.ToListAsync();
+            model.User = user;
+            return View("/Views/Posts/AllPosts.cshtml", model);
         }
 
         [HttpGet]
-        [Route("UserPosts")]
         public async Task<IActionResult> UserPosts(string id)
         {
             var user = await userManager.FindByIdAsync(id);
             if (user == null) return RedirectToAction("Index", "Home");
 
-            var userPosts = postRepo.GetAll().Include(p => p.Comments).Where(p => p.UserId.Equals(id));
-            var model = new UserPostsViewModel { User = user, Posts = await userPosts.ToListAsync() };
+            var userPosts = await postRepo.GetAll().Include(p => p.Comments).Where(p => p.UserId.Equals(id)).ToListAsync();
+            var model = new UserPostsViewModel { User = user, Posts = userPosts };
 
             return View("/Views/Posts/UserPosts.cshtml", userPosts);
         }
 
         [HttpGet]
-        [Route("Post")]
-        public async Task<IActionResult> Post(string id)
+        public async Task<IActionResult> Post(Guid id)
         {
-            var post = await postRepo.GetByIdAsync(id);
-            if (post == null) return View("Views/Posts/PostNotFound");
+            var user = await userManager.GetUserAsync(User);
+            var post = await postRepo.GetAll().Include(p => p.User).Include(p => p.Tags).FirstOrDefaultAsync(p => p.Id == id);
+            var comments = await commentRepo.GetAll().Include(c => c.User).ToListAsync();
+            if (post == null) return View("Views/Error/PostNotFound.cshtml");
 
-            return View("/Views/Posts/Post.cshtml", post);
+            var model = mapper.Map<PostViewModel>(post);
+            if (user != null)  model.User = user;
+            model.Comments = comments;
+
+            return View("/Views/Posts/Post.cshtml", model);
         }
     }
 }

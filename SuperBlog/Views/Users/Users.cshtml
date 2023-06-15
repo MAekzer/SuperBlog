@@ -1,5 +1,78 @@
-﻿@*
+﻿@using SuperBlog.Extentions;
+@using SuperBlog.Models.ViewModels;
+@model UsersViewModel
+@*
     For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 *@
 @{
+    ViewData["Title"] = "Поиск по пользователям";
 }
+<h1 class="text-center">Поиск по пользователям</h1>
+<form asp-action="Users" asp-controller="User">
+    <div class="input-group mt-3 mb-5">
+        <span class="input-group-text">Искать по параметру: </span>
+        <select class="form-select" asp-for="SearchCriterion">
+            @for (int i = 0; i < (int)SearchCriteria.End; i++)
+            {
+                <option value="@i">@((SearchCriteria)i)</option>
+            }
+        </select>
+        <input class="form-control" type="text" asp-for="SearchParam" />
+        <button type="submit" class="btn btn-outline-primary">Искать</button>
+    </div>
+</form>
+<div class="d-flex justify-content-center flex-wrap">
+    @foreach (var user in Model.Users)
+    {
+        <div class="card me-3 mb-3" style="width: 26rem;">
+            <div class="card-body">
+                <div class="row mb-2">
+                    <h5 class="card-title col-8">
+                        <a asp-area="" asp-action="UserProfile" asp-controller="User" asp-route-id="@user.User.Id" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">
+                            @user.User.GetFullName()
+                        </a>
+                    </h5>
+                    <div class="btn-group top-right" role="group">
+                        @if (User.IsInRole("admin"))
+                        {
+                            <a class="btn btn-outline-warning btn-sm" asp-action="Update" asp-controller="User" asp-route-id="@user.User.Id">Ред.</a>
+                            <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#delete-confirm-@user.User.Id">Удалить</button>
+                            <div class="modal fade" id="delete-confirm-@user.User.Id" tabindex="-1" aria-labelledby="modal-title" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h1 class="modal-title fs-5" id="modal-title">Удаление статьи</h1>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body text-center">
+                                            Вы действительно хотите удалить пользователя @(user.User.GetFullName())?<br />
+                                            Отменить это действие будет невозможно.
+                                        </div>
+                                        <div class="modal-footer">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Назад</button>
+                                            <form method="post" asp-action="Delete" asp-controller="Post" asp-route-id="@user.User.Id">
+                                                <button type="submit" class="btn btn-danger">Удалить</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="d-flex justify-content-start flex-wrap mb-1">
+                    @foreach (var role in user.Roles)
+                    {
+                        <span class="badge rounded-pill bg-primary mx-1 mb-1">@role.DisplayName</span>
+                    }
+                </div>
+                <h6 class="card-subtitle mb-2 text-body-secondary">Количество статей: @user.PostCount</h6>
+                @if (!string.IsNullOrEmpty(user.User.About))
+                {
+                    <p class="card-text">@user.User.About</p>
+                }
+            </div>
+        </div>
+    }
+</div>
+

@@ -11,6 +11,5 @@ namespace SuperBlog.Models.Entities
         public string? About { get; set; }
         public List<Post> Posts { get; set; } = new List<Post>();
         public List<Comment> Comments { get; set; } = new List<Comment>();
-        public List<Role> Roles { get; set; } = new List<Role>();
     }
 }

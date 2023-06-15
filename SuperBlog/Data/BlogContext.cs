@@ -13,18 +13,12 @@ namespace SuperBlog.Data
 
         public BlogContext(DbContextOptions<BlogContext> options) : base(options)
         {
-            Database.EnsureCreated();
+            Database.Migrate();
         }
 
         protected override void OnModelCreating(ModelBuilder builder)
         {
             base.OnModelCreating(builder);
-
-            builder.Entity<User>(b =>
-            {
-                b.HasMany(e => e.Roles)
-                .WithMany(e => e.Users);
-            });
         }
     }
 }

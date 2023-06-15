@@ -1,5 +1,174 @@
-﻿@*
+﻿@model SuperBlog.Models.ViewModels.EditUserViewModel
+@*
     For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 *@
 @{
+    ViewData["Title"] = "Редактирование профиля";
+}
+
+<script src="~/lib/jquery/dist/jquery.js"></script>
+
+<h1 class="text-center mb-5">Редактирование профиля </h1>
+<form method="post" asp-action="Update" asp-controller="User">
+    <input type="text" asp-for="Id" value="@Model.Id" hidden />
+    @if (User.IsInRole("admin"))
+    {
+        <div class="d-flex mb-4 justify-content-center flex-wrap">
+            @for (int i = 0; i < Model.Roles.Count; i++)
+            {
+                <div class="form-check form-check-inline">
+                    @if (Model.Roles[i].DispayName == "Пользователь")
+                    {
+                        <input class="form-check-input" type="checkbox" id="tag-@Model.Roles[i]" asp-for="Roles[i].IsChecked" checked disabled />
+                    }
+                    else if (Model.Roles[i].IsChecked)
+                    {
+                        <input class="form-check-input" type="checkbox" id="tag-@Model.Roles[i]" asp-for="Roles[i].IsChecked" checked />
+                    }
+                    else
+                    {
+                        <input class="form-check-input" type="checkbox" id="tag-@Model.Roles[i]" asp-for="Roles[i].IsChecked" />
+                    }
+                    <label class="form-check-label" for="tag-@Model.Roles[i]">
+                        @($" {@Model.Roles[i].DispayName}")
+                    </label>
+                    <input type="text" hidden asp-for="Roles[i].Id" value="@Model.Roles[i].Id">
+                    <input type="text" hidden asp-for="Roles[i].DispayName" value="@Model.Roles[i].DispayName">
+                </div>
+            }
+        </div>
+    }
+    <div class="row mb-3">
+        <div class="col">
+            <div class="form-floating">
+                <input type="text" asp-for="FirstName" class="form-control" placeholder="Имя" />
+                <label>Имя</label>
+            </div>
+            <span asp-validation-for="FirstName" class="text-danger"></span>
+        </div>
+        <div class="col">
+            <div class="form-floating">
+                <input type="text" asp-for="LastName" class="form-control" placeholder="Фамилия" />
+                <label>Фамилия</label>
+            </div>
+            <span asp-validation-for="LastName" class="text-danger"></span>
+        </div>
+        <div class="col">
+            <div class="form-floating">
+                <input type="text" asp-for="MiddleName" class="form-control" placeholder="Отчество" />
+                <label>Отчество</label>
+            </div>
+            <span asp-validation-for="MiddleName" class="text-danger"></span>
+        </div>
+    </div>
+    <div class="row mb-3">
+        <div class="col">
+            <div class="form-floating">
+                <input type="text" asp-for="UserName" class="form-control" placeholder="Никнейм" />
+                <label>Никнейм</label>
+            </div>
+            <span asp-validation-for="UserName" class="text-danger"></span>
+        </div>
+        <div class="col">
+            <div class="form-floating">
+                <input type="email" asp-for="Email" class="form-control" placeholder="Email" />
+                <label>Email</label>
+            </div>
+            <span asp-validation-for="Email" class="text-danger"></span>
+        </div>
+    </div>
+    <h5 class="text-center">Дата рождения</h5>
+    <div class="row mb-4">
+        <div class="col">
+            <div class="form-floating">
+                <input id="day" type="number" asp-for="Day" class="form-control" placeholder="День" />
+                <label>День</label>
+            </div>
+            <span asp-validation-for="Day" class="text-danger"></span>
+        </div>
+        <div class="col">
+            <div class="form-floating">
+                <input id="month" type="number" asp-for="Month" class="form-control" placeholder="Месяц" />
+                <label>Месяц</label>
+            </div>
+            <span asp-validation-for="Month" class="text-danger"></span>
+        </div>
+        <div class="col">
+            <div class="form-floating">
+                <input id="year" type="number" asp-for="Year" class="form-control" placeholder="Год" />
+                <label>Год</label>
+            </div>
+            <span asp-validation-for="Year" class="text-danger"></span>
+        </div>
+    </div>
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    <div class="input-group">
+        <span class="input-group-text">О себе:</span>
+        <textarea class="form-control" aria-label="With textarea" rows="3" maxlength="1000" asp-for="About"></textarea>
+    </div>
+    <div class="text-center mt-3">
+        <button class="btn btn-outline-success btn-lg" type="submit">Сохранить Изменения</button>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        let month_days = {
+            0: 31,
+            1: 31,
+            2: 28,
+            3: 31,
+            4: 30,
+            5: 31,
+            6: 30,
+            7: 31,
+            8: 31,
+            9: 30,
+            10: 31,
+            11: 30,
+            12: 31
+        }
+
+        function validate() {
+            let day = Number($("#day").val())
+            let month = Number($("#month").val());
+            let year = Number($("#year").val());
+            let isLeap = year % 4 == 0;
+            let currentYear = new Date().getFullYear();
+
+            if (year % 100 === 0 && year % 400 !== 0) {
+                isLeap = false
+            }
+
+            if (isLeap) {
+                month_days[2] = 29
+            } else {
+                month_days[2] = 28
+            }
+
+            if (currentYear - year < 14) {
+                $("#year").val(currentYear - 14);
+            }
+
+            if (month < 1) {
+                $("#month").val(1);
+            }
+
+            if (month > 12) {
+                $("#month").val(12);
+            }
+
+            if (day > month_days[month]) {
+                $("#day").val(month_days[month])
+            }
+        }
+
+        $(document).ready(function () {
+            $("#day").on("input", validate)
+
+            $("#month").on("input", validate)
+
+            $("#year").on("input", validate)
+        })
+    </script>
 }

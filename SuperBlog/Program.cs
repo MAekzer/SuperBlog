@@ -42,7 +42,7 @@ namespace SuperBlog
 
             builder.Services.ConfigureApplicationCookie(opt =>
             {
-                opt.AccessDeniedPath = "/AccessDenied";
+                opt.AccessDeniedPath = "/Views/Error/AccessDenied.cshtml";
                 opt.LoginPath = "/";
             });
 
@@ -64,7 +64,6 @@ namespace SuperBlog
             app.UseAuthentication();
             app.UseAuthorization();
 
-            app.MapRazorPages();
             app.MapControllerRoute(
                 name: "default",
                 pattern: "{controller=Home}/{action=Index}/{id?}");

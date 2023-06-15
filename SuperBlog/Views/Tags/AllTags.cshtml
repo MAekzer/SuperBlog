@@ -1,0 +1,38 @@
+﻿@using SuperBlog.Models.ViewModels;
+@model TagViewModel
+@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    ViewData["Title"] = "Теги";
+}
+<h2 class="text-center mb-3">Все существующие на данный момент теги:</h2>
+<ul class="list-group mb-3">
+    @foreach (var tag in Model.Tags)
+    {
+        <li class="list-group-item d-flex justify-content-between align-items-start">
+            <span>
+                <a asp-action="Tag" asp-controller="Tag" asp-route-id="@tag.Key.Id" class="link-primary">@tag.Key.Name</a> 
+                @if (User.IsInRole("moderator"))
+                {
+                    <a class="btn btn-outline-warning btn-sm" asp-action="Update" asp-controller="Tag" asp-route-id="@tag.Key.Id">Редактировать</a>
+                    <form class="d-inline" method="post" asp-action="Delete" asp-controller="Tag" asp-route-id="@tag.Key.Id">
+                        <button class="btn btn-outline-danger btn-sm" type="submit">Удалить</button>
+                    </form>
+                }
+            </span>
+            <span class="text-secondary">Количество статей - @tag.Value</span>
+        </li>
+    }
+</ul>
+@if (User.IsInRole("moderator"))
+{
+    <h5 class="text-center mb-3">Добавление нового тега:</h5>
+    <form class="text-center" method="post" asp-action="Create" asp-controller="Tag">
+        <div class="input-group">
+            <span class="input-group-text">Название тега</span>
+            <input class="form-control" type="text" asp-for="Name" />
+            <button class="btn btn-outline-secondary" type="submit">Добавить</button>
+        </div>
+    </form>
+}

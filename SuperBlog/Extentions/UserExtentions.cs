@@ -5,18 +5,22 @@ namespace SuperBlog.Extentions
 {
     public static class UserExtentions
     {
-        public static void Update(this User user, UpdateUserViewModel model)
+        public static void Update(this User user, EditUserViewModel model)
         {
-            if (!string.IsNullOrEmpty(model.UserName))
-                user.UserName = model.UserName;
-            if (!string.IsNullOrEmpty(model.Email))
-                user.Email = model.Email;
-            if (!string.IsNullOrEmpty(model.FirstName))
-                user.FirstName = model.FirstName;
-            if (!string.IsNullOrEmpty (model.LastName))
-                user.LastName = model.LastName;
-            if (!string.IsNullOrEmpty(model.MiddleName))
-                user.MiddleName = model.MiddleName;
+            user.UserName = model.UserName;
+            user.Email = model.Email;
+            user.FirstName = model.FirstName;
+            user.LastName = model.LastName;
+            user.MiddleName = model.MiddleName;
+            user.BirthDate = model.MakeBirthDate();
+            user.About = model.About;
+        }
+
+        public static string GetFullName(this User user)
+        {
+            if (string.IsNullOrEmpty(user.MiddleName))
+                return $"{user.LastName} {user.FirstName}";
+            return $"{user.LastName} {user.FirstName} {user.MiddleName}";
         }
     }
 }

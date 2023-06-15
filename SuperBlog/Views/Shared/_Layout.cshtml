@@ -1,6 +1,12 @@
 ﻿@using Microsoft.AspNetCore.Identity
+@using SuperBlog.Extentions;
 @using SuperBlog.Models.Entities;
 @inject SignInManager<User> signInManager
+@inject UserManager<User> userManager
+
+@{
+    var currentUser = await userManager.GetUserAsync(User);
+}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -15,7 +21,7 @@
 <body>
     <header>
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
+            <div class="container-fluid pd-l-15">
                 <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">SuperBlog</a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
                         aria-expanded="false" aria-label="Toggle navigation">
@@ -26,19 +32,29 @@
                     <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
                         <ul class="navbar-nav flex-grow-1">
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Post" asp-action="Posts">Статьи</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Tag" asp-action="AllTags">Теги</a>
                             </li>
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="User" asp-action="Users">Пользователи</a>
+                            </li>
+                            @if (User.IsInRole("moderator"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-area="" asp-controller="Role" asp-action="Roles">Роли</a>
+                                </li>
+                            }
                         </ul>
                     </div>
                 }
-                <div>
+                <div class="d-inline-flex">
                     @if (signInManager.IsSignedIn(User))
                     {
+                        <a class="link-dark mx-3 mt-2" asp-action="MyProfile" asp-controller="User">@currentUser.GetFullName()</a>
                         <form method="post" asp-area="" asp-action="Logout" asp-controller="User">
-                            <button class="btn btn-outline-danger" type="submit">Выйти</button>
+                            <button class="btn btn-outline-danger mrgn-r" type="submit">Выйти</button>
                         </form>
                     }
                     else
@@ -57,7 +73,7 @@
 
     <footer class="border-top footer text-muted">
         <div class="container">
-            &copy; 2023 - SuperBlog - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            &copy; 2023 - SuperBlog - Разработка персонального блога
         </div>
     </footer>
     <script src="~/lib/jquery/dist/jquery.js"></script>

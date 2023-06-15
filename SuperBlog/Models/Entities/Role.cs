@@ -1,11 +1,24 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using SuperBlog.Models.ViewModels;
 
 namespace SuperBlog.Models.Entities
 {
     public class Role : IdentityRole<Guid>
     {
-        public List<User> Users { get; set; } = new List<User>();
+        public string DisplayName { get; set; }
+        public string Description { get; set; }
 
-        public Role(string name) : base(name) { }
+        public Role(string Name, string DisplayName, string Description) : base(Name) 
+        {
+            this.DisplayName = DisplayName;
+            this.Description = Description;
+        }
+
+        public void Update(EditRoleViewModel model)
+        {
+            Name = model.Name;
+            Description = model.Description;
+            DisplayName = model.DisplayName;
+        }
     }
 }

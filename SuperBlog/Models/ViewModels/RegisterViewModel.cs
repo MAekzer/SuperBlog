@@ -39,6 +39,8 @@ namespace SuperBlog.Models.ViewModels
         [DisplayName("Год")]
         [Required(ErrorMessage = "Поле Год обязательно для заполнения")]
         public string Year { get; set; }
+        [DisplayName("О себе")]
+        public string About { get; set; }
 
         public DateTime MakeBirthDate()
         {
