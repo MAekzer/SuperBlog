@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using SuperBlog.Data.Repositories;
+using SuperBlog.Extentions;
 using SuperBlog.Models.Entities;
 using SuperBlog.Models.ViewModels;
 
@@ -11,11 +13,13 @@ namespace SuperBlog.Controllers
     {
         private readonly UserManager<User> userManager;
         private readonly RoleManager<Role> roleManager;
+        private readonly IRepository<Post> postRepo;
 
-        public RoleController(UserManager<User> userManager, RoleManager<Role> roleManager)
+        public RoleController(UserManager<User> userManager, RoleManager<Role> roleManager, IRepository<Post> postRepo)
         {
             this.userManager = userManager;
             this.roleManager = roleManager;
+            this.postRepo = postRepo;
         }
 
         [HttpGet]
@@ -52,7 +56,16 @@ namespace SuperBlog.Controllers
             var role = await roleManager.FindByIdAsync(id);
             if (role == null) return View("Error");
             var users = await userManager.GetUsersInRoleAsync(role.Name);
-            var model = new RoleViewModel { Role = role, Users = users.ToList() };
+            var model = new RoleViewModel { Role = role, Users = new List<UserViewModel>() };
+
+            foreach (var user in users)
+            {
+                var roles = await roleManager.GetRoles(user, userManager);
+                int count = await postRepo.GetAll().Where(p => p.UserId == user.Id).CountAsync();
+                var userModel = new UserViewModel { User = user, Roles = roles, PostCount = count };
+                model.Users.Add(userModel);
+            }
+            
             return View("/Views/Roles/Role.cshtml", model);
         }
 

@@ -6,9 +6,6 @@
     ViewData["Title"] = "Редактирование Роли";
 }
 
-<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
-<script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
-
 <h1 class="text-center mb-5">Редактирование Роли @Model.Name</h1>
 <form asp-action="Update" asp-controller="Role">
     <input type="text" hidden value="@Model.Id" asp-for="Id" />
@@ -44,3 +41,9 @@
         <button type="submit" class="mx-auto btn btn-primary btn-lg mt-4">Сохранить изменения</button>
     </div>
 </form>
+
+@section Scripts {
+    @{
+        <partial name="_ValidationScriptsPartial" />
+    }
+}

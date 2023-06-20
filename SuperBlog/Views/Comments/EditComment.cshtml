@@ -7,9 +7,9 @@
 }
 <a class="btn btn-primary mb-2" style="margin-left: 10%;" href="javascript:history.back()">Назад</a>
 <div class="card mx-auto mb-4" style="width: 80%;">
-    <div class="card-body text-center">
-        <h5 class="card-title">@Model.Post.Title</h5>
-        <p class="card-text">@Model.Post.Content</p>
+    <div class="card-body">
+        <h5 class="card-title text-center">@Model.Post.Title</h5>
+        <p class="card-text text-start">@Model.Post.Content</p>
     </div>
     <div class="card-footer d-flex justify-content-between">
         <div class="text-start">
@@ -47,11 +47,13 @@
         <span asp-validation-for="Content" class="text-danger"></span>
     </div>
     <div class="text-center mb-3">
-        <button type="submit" class="btn btn-primary btn-lg">Отправить</button>
+        <button type="submit" class="btn btn-outline-success btn-lg">Сохранить</button>
+        <a class="btn btn-outline-danger btn-lg" href="javascript:history.back()">Назад</a>
     </div>
 </form>
 
 @section Scripts {
-    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
-    <script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
+    @{
+        <partial name="_ValidationScriptsPartial" />
+    }
 }

@@ -47,17 +47,18 @@
         <div class="card me-3 mb-3" style="width: 26rem;">
             <div class="card-body">
                 <div class="row mb-2">
-                    <h5 class="card-title col-9">
-                        <a asp-area="" asp-action="UserProfile" asp-controller="User" asp-route-id="@user.Id" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">
-                            @user.GetFullName()
+                    <h5 class="card-title col-8">
+                        <a asp-area="" asp-action="UserProfile" asp-controller="User" asp-route-id="@user.User.Id" class="link-primary link-offset-2 link-underline-opacity-25 link-underline-opacity-100-hover">
+                            @user.User.GetFullName()
                         </a>
                     </h5>
+                    <h6 class="card-subtitle">Количество статей: @user.PostCount</h6>
                     <div class="btn-group top-right" role="group">
                         @if (User.IsInRole("admin"))
                         {
-                            <a class="btn btn-outline-warning btn-sm" asp-action="Update" asp-controller="User" asp-route-id="@user.Id">Ред.</a>
-                            <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#delete-confirm-@user.Id">Удалить</button>
-                            <div class="modal fade" id="delete-confirm-@user.Id" tabindex="-1" aria-labelledby="modal-title" aria-hidden="true">
+                            <a class="btn btn-outline-warning btn-sm" asp-action="Update" asp-controller="User" asp-route-id="@user.User.Id">Ред.</a>
+                            <button type="button" class="btn btn-outline-danger btn-sm" data-bs-toggle="modal" data-bs-target="#delete-confirm-@user.User.Id">Удалить</button>
+                            <div class="modal fade" id="delete-confirm-@user.User.Id" tabindex="-1" aria-labelledby="modal-title" aria-hidden="true">
                                 <div class="modal-dialog">
                                     <div class="modal-content">
                                         <div class="modal-header">
@@ -65,12 +66,12 @@
                                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                         </div>
                                         <div class="modal-body text-center">
-                                            Вы действительно хотите удалить пользователя @user.GetFullName()?<br />
+                                            Вы действительно хотите удалить пользователя @user.User.GetFullName()?<br />
                                             Отменить это действие будет невозможно.
                                         </div>
                                         <div class="modal-footer">
                                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Назад</button>
-                                            <form method="post" asp-action="Delete" asp-controller="User" asp-route-id="@user.Id">
+                                            <form method="post" asp-action="Delete" asp-controller="User" asp-route-id="@user.User.Id">
                                                 <button type="submit" class="btn btn-danger">Удалить</button>
                                             </form>
                                         </div>
@@ -80,6 +81,13 @@
                         }
                     </div>
                 </div>
+                @if (!string.IsNullOrEmpty(user.User.About))
+                {
+                    <p class="card-text">@user.User.About</p>
+                }
+            </div>
+            <div class="card-footer">
+                <small>@user.User.Email</small>
             </div>
         </div>
     }

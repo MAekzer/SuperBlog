@@ -6,9 +6,6 @@
     ViewData["Title"] = "Новая Роль";
 }
 
-<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
-<script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
-
 <h1 class="text-center mb-5">Добавление новой роли</h1>
 <form method="post" asp-action="Create" asp-controller="Role">
     <div class="mb-3">
@@ -39,3 +36,9 @@
         <button type="submit" class="text-center btn btn-primary btn-lg mt-4">Добавить</button>
     </div>
 </form>
+
+@section Scripts {
+    @{
+        <partial name="_ValidationScriptsPartial" />
+    }
+}

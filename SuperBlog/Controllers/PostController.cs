@@ -86,7 +86,7 @@ namespace SuperBlog.Controllers
 
             var currentUser = await userManager.GetUserAsync(User);
             if (post == null || currentUser == null) return RedirectToAction("Index", "Home");
-            if (currentUser.Id != post.UserId && User.IsInRole("moderator")) return RedirectToAction("MyFeed", "User");
+            if (currentUser.Id != post.UserId && !User.IsInRole("moderator")) return RedirectToAction("MyFeed", "User");
 
             var model = mapper.Map<EditPostViewModel>(post);
             var tags = await tagRepo.GetAll().ToListAsync();
@@ -180,18 +180,6 @@ namespace SuperBlog.Controllers
             model.Posts = await posts.ToListAsync();
             model.User = user;
             return View("/Views/Posts/AllPosts.cshtml", model);
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> UserPosts(string id)
-        {
-            var user = await userManager.FindByIdAsync(id);
-            if (user == null) return RedirectToAction("Index", "Home");
-
-            var userPosts = await postRepo.GetAll().Include(p => p.Comments).Where(p => p.UserId.Equals(id)).ToListAsync();
-            var model = new UserPostsViewModel { User = user, Posts = userPosts };
-
-            return View("/Views/Posts/UserPosts.cshtml", userPosts);
         }
 
         [HttpGet]

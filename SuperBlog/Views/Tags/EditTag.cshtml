@@ -8,9 +8,21 @@
 
 <form method="post" asp-action="Update" asp-controller="Tag">
     <input type="text" hidden value="@Model.Id" asp-for="Id" />
-    <div class="input-group">
-        <span class="input-group-text">Новое имя тега</span>
-        <input type="text" class="form-control" asp-for="Name" value="@Model.Name"/>
-        <button type="submit" class="btn btn-warning">Редактировать</button>
+    <div class="mb-3">
+        <div class="input-group">
+            <span class="input-group-text">Новое имя тега</span>
+            <input type="text" class="form-control" asp-for="Name" value="@Model.Name" />
+            <button type="submit" class="btn btn-warning">Сохранить</button>
+        </div>
+        <span class="text-danger" asp-validation-for="Name"></span>
+    </div>
+    <div class="mt-3 text-center">
+        <a class="btn btn-outline-danger" href="javascript:history.back()">Назад</a>
     </div>
 </form>
+
+@section Scripts {
+    @{
+        <partial name="_ValidationScriptsPartial" />
+    }
+}

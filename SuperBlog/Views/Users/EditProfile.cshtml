@@ -108,10 +108,14 @@
     </div>
     <div class="text-center mt-3">
         <button class="btn btn-outline-success btn-lg" type="submit">Сохранить Изменения</button>
+        <a class="btn btn-outline-danger btn-lg" href="javascript:history.back()">Назад</a>
     </div>
 </form>
 
 @section Scripts {
+    @{
+        <partial name="_ValidationScriptsPartial" />
+    }
     <script>
         let month_days = {
             0: 31,
