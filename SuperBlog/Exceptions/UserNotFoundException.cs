@@ -1,6 +1,7 @@
 ﻿namespace SuperBlog.Exceptions
 {
-    public class UserNotFoundException
+    public class UserNotFoundException : Exception
     {
+        
     }
 }

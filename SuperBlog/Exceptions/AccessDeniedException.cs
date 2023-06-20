@@ -1,6 +1,6 @@
 ﻿namespace SuperBlog.Exceptions
 {
-    public class AccessDeniedException
+    public class AccessDeniedException : Exception
     {
     }
 }
