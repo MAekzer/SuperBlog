@@ -115,7 +115,7 @@ namespace SuperBlog.Controllers
             try
             {
                 var model = await handler.SetupMyFeed(User);
-                return View("/Views/User/MyFeed.cshtml", model);
+                return View("/Views/Users/MyFeed.cshtml", model);
             }
             catch (UserNotFoundException)
             {
@@ -150,7 +150,7 @@ namespace SuperBlog.Controllers
             }
             catch(UserNotFoundException)
             {
-                return View("/Views/Error/UserNotFoundException.cshtml");
+                return View("/Views/Error/UserNotFound.cshtml");
             }
         }
 
@@ -175,7 +175,7 @@ namespace SuperBlog.Controllers
         {
             try
             {
-                var model = await handler.SetupProfile(User);
+                var model = await handler.SetupProfile(User, id);
                 if (model is null)
                     return RedirectToAction("MyProfile", "User");
                 return View("/Views/Users/UserProfile.cshtml", model);

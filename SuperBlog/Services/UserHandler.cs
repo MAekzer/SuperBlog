@@ -113,14 +113,14 @@ namespace SuperBlog.Services
             var result = new UserHandlingResult();
             var user = await userManager.FindByIdAsync(model.Id.ToString()) ?? throw new UserNotFoundException();
             var existingUser = await userManager.FindByEmailAsync(model.Email);
-            if (existingUser != null)
+            if (existingUser != null && existingUser.Id != user.Id)
             {
                 result.EmailAlreadyExists = true;
                 return result;
             }
 
             existingUser = await userManager.FindByNameAsync(model.UserName);
-            if (existingUser != null)
+            if (existingUser != null && existingUser.Id != user.Id)
             {
                 result.LoginAlreadyExists = true;
                 return result;

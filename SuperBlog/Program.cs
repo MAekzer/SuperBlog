@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using SuperBlog.Data;
 using SuperBlog.Data.Repositories;
 using SuperBlog.Models.Entities;
+using SuperBlog.Services;
 using System.Reflection;
 using System.Runtime.InteropServices;
 
@@ -26,6 +27,7 @@ namespace SuperBlog
             builder.Services.AddScoped<IRepository<Comment>, CommentRepository>();
             builder.Services.AddScoped<IRepository<Tag>, TagRepository>();
             builder.Services.AddScoped<ISecurityRepository, SecurityRepository>();
+            builder.Services.AddScoped<UserHandler>();
 
             // Add services to the container.
             builder.Services.AddRazorPages().AddRazorRuntimeCompilation();

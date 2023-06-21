@@ -1,4 +1,4 @@
-﻿namespace SuperBlog.Services
+﻿namespace SuperBlog.Services.Results
 {
     public class UserHandlingResult
     {
