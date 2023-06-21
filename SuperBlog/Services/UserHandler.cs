@@ -39,6 +39,7 @@ namespace SuperBlog.Services
             this.postRepo = postRepo;
         }
 
+        public async Task<UserHandlingResult> HandleLogin(LoginViewModel model)
         {
             var result = new UserHandlingResult();
             var user = await userManager.FindByNameAsync(model.UserName);
