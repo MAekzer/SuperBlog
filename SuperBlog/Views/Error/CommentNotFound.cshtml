@@ -1,6 +1,15 @@
-﻿@*
+﻿@model SuperBlog.Models.ViewModels.EntityNotFoundViewModel
+@*
     For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 *@
 @{
+    ViewData["Title"] = "Comment Not Found";
 }
-<h1 class="text-center">При попытке обращения к комментарию произошла ошибка - комментарий не найден</h1>
+<h1 class="text-center">Ошибка - комментарий не найден</h1>
+<h5 class="text-center">Подробности об ошибке:</h5>
+<hr />
+<div class="alert alert-danger">
+    <h5>При попытке обращения к комментарию произошла ошибка - комментарий не найден</h5>
+    <hr />
+    <p>Идентификатор комментраий - @Model.Id</p>
+</div>

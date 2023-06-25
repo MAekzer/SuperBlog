@@ -1,8 +1,11 @@
+using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using NLog.Extensions.Logging;
 using SuperBlog.Data;
 using SuperBlog.Data.Repositories;
+using SuperBlog.Exceptions;
 using SuperBlog.Models.Entities;
 using SuperBlog.Services;
 using System.Reflection;
@@ -16,8 +19,9 @@ namespace SuperBlog
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            string connectionString = builder.Configuration.GetConnectionString("Default");
+            builder.Logging.AddNLog();
 
+            string connectionString = builder.Configuration.GetConnectionString("Default");
             builder.Services.AddDbContext<BlogContext>(opt => opt.UseSqlite(connectionString));
 
             var mappingAssembly = Assembly.GetAssembly(typeof(MappingProfile));
@@ -28,8 +32,12 @@ namespace SuperBlog
             builder.Services.AddScoped<IRepository<Tag>, TagRepository>();
             builder.Services.AddScoped<ISecurityRepository, SecurityRepository>();
             builder.Services.AddScoped<UserHandler>();
+            builder.Services.AddScoped<TagHandler>();
+            builder.Services.AddScoped<RoleHandler>();
+            builder.Services.AddScoped<PostHandler>();
+            builder.Services.AddScoped<CommentHandler>();
+            builder.Services.AddScoped<ErrorHandler>();
 
-            // Add services to the container.
             builder.Services.AddRazorPages().AddRazorRuntimeCompilation();
             builder.Services.AddControllersWithViews();
 
@@ -44,7 +52,7 @@ namespace SuperBlog
 
             builder.Services.ConfigureApplicationCookie(opt =>
             {
-                opt.AccessDeniedPath = "/Views/Error/AccessDenied.cshtml";
+                opt.AccessDeniedPath = "/AccessDenied";
                 opt.LoginPath = "/";
             });
 
@@ -52,8 +60,10 @@ namespace SuperBlog
 
             // Configure the HTTP request pipeline.
             if (!app.Environment.IsDevelopment())
-            {
-                app.UseExceptionHandler("/Home/Error");
+            { 
+                app.UseStatusCodePagesWithReExecute("/Error/{0}");
+                app.UseExceptionHandler("/Error");
+
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }

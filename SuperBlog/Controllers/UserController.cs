@@ -15,10 +15,12 @@ namespace SuperBlog.Controllers
     public class UserController : Controller
     {
         private readonly UserHandler handler;
+        private readonly ErrorHandler errorHandler;
 
-        public UserController(UserHandler _handler)
+        public UserController(UserHandler _handler, ErrorHandler errorHandler)
         {
             handler = _handler;
+            this.errorHandler = errorHandler;
         }
 
         [HttpPost]
@@ -70,12 +72,17 @@ namespace SuperBlog.Controllers
         {
             try
             {
-                var model = await handler.SetupUpdate(id);
+                var model = await handler.SetupUpdate(id, User);
                 return View("/Views/Users/EditProfile.cshtml", model);
             }
-            catch (UserNotFoundException)
+            catch (Exception e) when (e is UserNotFoundException || e is FormatException)
             {
-                return View("/Views/Error/UserNotFound.cshtml");
+                var errorModel = errorHandler.HandleNotFoundError(id, User, Response, "user");
+                return View("/Views/Error/UserNotFound.cshtml", errorModel);
+            }
+            catch (AccessDeniedException)
+            {
+                return RedirectToAction("AccessDenied", "Home");
             }
         }
 
@@ -87,7 +94,7 @@ namespace SuperBlog.Controllers
             {
                 if (!ModelState.IsValid) return View("/Views/Users/EditProfile.cshtml", model);
 
-                var result = await handler.HandleUpdate(model);
+                var result = await handler.HandleUpdate(model, User);
                 if (result.LoginAlreadyExists)
                 {
                     ModelState.AddModelError("Email", "Пользователь с таким именем уже существует");
@@ -101,11 +108,15 @@ namespace SuperBlog.Controllers
                 if (result.Success) return RedirectToAction("UserProfile", "User", new { id = model.Id });
                 return View("/Views/Users/EditProfile.cshtml");
             }
-            catch (UserNotFoundException)
+            catch (Exception e) when (e is UserNotFoundException || e is FormatException)
             {
-                return View("/Views/Error/UserNotFound.cshtml");
+                var errorModel = errorHandler.HandleNotFoundError(model.Id, User, Response, "user");
+                return View("/Views/Error/UserNotFound.cshtml", errorModel);
             }
-            
+            catch (AccessDeniedException)
+            {
+                return RedirectToAction("AccessDenied", "Home");
+            }
         }
 
         [Authorize]
@@ -119,7 +130,8 @@ namespace SuperBlog.Controllers
             }
             catch (UserNotFoundException)
             {
-                return View("/Views/Error/UserNotFound.cshtml");
+                var errorModel = handler.HandleNotFoundError(Response);
+                return View("/Views/Error/UserNotFound.cshtml", errorModel);
             }
         }
 
@@ -134,7 +146,8 @@ namespace SuperBlog.Controllers
             }
             catch (UserNotFoundException)
             {
-                return View("/Views/Error/UserNotFound.cshtml");
+                var errorModel = handler.HandleNotFoundError(Response);
+                return View("/Views/Error/UserNotFound.cshtml", errorModel);
             }
         }
 
@@ -145,12 +158,16 @@ namespace SuperBlog.Controllers
             try
             {
                 var result = await handler.HandleDelete(id, User);
-                if (result.AccessDenied) return View("/Views/Error/AccessDenied.cshtml");
                 return RedirectToAction("Users", "User");
             }
-            catch(UserNotFoundException)
+            catch (Exception e) when (e is UserNotFoundException || e is FormatException)
             {
-                return View("/Views/Error/UserNotFound.cshtml");
+                var errorModel = errorHandler.HandleNotFoundError(id, User, Response, "user");
+                return View("/Views/Error/UserNotFound.cshtml", errorModel);
+            }
+            catch (AccessDeniedException)
+            {
+                return RedirectToAction("AccessDenied", "Home");
             }
         }
 
@@ -180,9 +197,10 @@ namespace SuperBlog.Controllers
                     return RedirectToAction("MyProfile", "User");
                 return View("/Views/Users/UserProfile.cshtml", model);
             }
-            catch (UserNotFoundException)
+            catch (Exception e) when (e is UserNotFoundException || e is FormatException)
             {
-                return View("/Views/Error/UserNotFound.cshtml");
+                var errorModel = errorHandler.HandleNotFoundError(id, User, Response, "user");
+                return View("/Views/Error/UserNotFound.cshtml", errorModel);
             }
         }
 

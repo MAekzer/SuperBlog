@@ -1,7 +1,16 @@
-﻿@*
+﻿@model SuperBlog.Models.ViewModels.ErrorViewModel
+@*
     For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 *@
 @{
+    ViewData["Title"] = "Доступ запрещен";
 }
 
-<h1 class="text-center">У вас недостаточно прав для обращения к этому ресурсу</h1>
+<h3 class="text-center">Доступ запрещен</h3>
+<h5 class="text-center">Подробности об ошибке:</h5>
+<hr />
+<div class="alert alert-danger">
+    <h5>Ошибка доступа</h5>
+    <hr />
+    <p>У вас недостаточно прав для доступа к этому ресурсу</p>
+</div>

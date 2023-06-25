@@ -34,5 +34,12 @@
             <input class="form-control" type="text" asp-for="Name" />
             <button class="btn btn-outline-secondary" type="submit">Добавить</button>
         </div>
+        <span asp-validation-for="Name" class="text-danger"></span>
     </form>
+}
+
+@section Scripts {
+    @{
+        <partial name="_ValidationScriptsPartial" />
+    }
 }

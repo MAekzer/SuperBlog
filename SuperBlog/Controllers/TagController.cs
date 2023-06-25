@@ -3,55 +3,56 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SuperBlog.Data.Repositories;
+using SuperBlog.Exceptions;
 using SuperBlog.Models.Entities;
 using SuperBlog.Models.ViewModels;
+using SuperBlog.Services;
 
 namespace SuperBlog.Controllers
 {
     public class TagController : Controller
     {
-        private readonly IRepository<Tag> tagRepo;
-        private readonly IRepository<Post> postRepo;
-        private readonly UserManager<User> userManager;
+        private readonly ErrorHandler errorHandler;
+        private readonly TagHandler handler;
 
-        public TagController(IRepository<Tag> tagRepository, IRepository<Post> postRepo, UserManager<User> userManager)
+        public TagController(ErrorHandler errorHandler, TagHandler handler)
         {
-            tagRepo = tagRepository;
-            this.postRepo = postRepo;
-            this.userManager = userManager;
+            this.errorHandler = errorHandler;
+            this.handler = handler;
         }
 
         [HttpGet]
         public async Task<IActionResult> AllTags()
         {
-            var tags = await tagRepo.GetAll().Include(t => t.Posts).ToListAsync();
-            var dict = new Dictionary<Tag, int>();
-            foreach (var tag in tags)
-            {
-                dict.Add(tag, tag.Posts.Count);
-            }
-            var model = new TagViewModel { Tags = dict };
+            var model = await handler.SetupTags();
             return View("/Views/Tags/AllTags.cshtml", model);
         }
 
         [HttpGet]
         public async Task<IActionResult> Tag(Guid id)
         {
-            var user = await userManager.GetUserAsync(User);
-            var tag = await tagRepo.GetAll().Include("Posts.User").Include("Posts.Tags").FirstOrDefaultAsync(t => t.Id == id);
-
-            if (tag == null) return View("/Views/Error/TagNotFound.cshtml");
-            var model = new TagPostsViewModel { Name = tag.Name, User = user, Posts = tag.Posts };
-
-            return View("/Views/Tags/TagPosts.cshtml", model);
+            try
+            {
+                var model = await handler.SetupTag(id, User);
+                return View("/Views/Tags/TagPosts.cshtml", model);
+            }
+            catch (TagNotFoundException)
+            {
+                var errorModel = await errorHandler.HandleNotFoundError(id, User, Response, "tag");
+                return View("/Views/Error/TagNotFound.cshtml", errorModel);
+            }
         }
 
         [HttpPost]
         [Authorize(Roles = "moderator")]
         public async Task<IActionResult> Create(TagViewModel model)
         {
-            var tag = new Tag { Name = model.Name };
-            await tagRepo.AddAsync(tag);
+            var result = await handler.HandleCreate(model);
+            if (result.AlreadyExists)
+            {
+                ModelState.AddModelError("Name", "Тег с таким именем уже существует");
+                return View("/Views/Tags/AllTags.cshtml", model);
+            }
             return RedirectToAction("AllTags", "Tag");
         }
 
@@ -59,34 +60,49 @@ namespace SuperBlog.Controllers
         [Authorize(Roles = "moderator")]
         public async Task<IActionResult> Update(Guid id)
         {
-            var tag = await tagRepo.GetByIdAsync(id);
-            if (tag == null) return View("/Views/Tags/TagNotFound.cshtml");
-            var model = new EditTagViewModel { Id = id, Name = tag.Name };
-            return View("/Views/Tags/EditTag.cshtml", model);
+            try
+            {
+                var model = await handler.SetupUpdate(id);
+                return View("/Views/Tags/EditTag.cshtml", model);
+            }
+            catch (TagNotFoundException)
+            {
+                var errorModel = await errorHandler.HandleNotFoundError(id, User, Response, "tag");
+                return View("/Views/Error/TagNotFound.cshtml", errorModel);
+            }
         }
 
         [HttpPost]
         [Authorize(Roles = "moderator")]
         public async Task<IActionResult> Update(EditTagViewModel model)
         {
-            var tag = await tagRepo.GetByIdAsync(model.Id);
-            if (tag == null) return View("/Views/Tags/TagNotFound.cshtml");
-
-            tag.Name = model.Name;
-            await tagRepo.UpdateAsync(tag);
-
-            return RedirectToAction("AllTags", "Tag");
+            try
+            {
+                var result = await handler.HandleUpdate(model);
+                return RedirectToAction("AllTags", "Tag");
+            }
+            catch (TagNotFoundException)
+            {
+                var errorModel = await errorHandler.HandleNotFoundError(model.Id, User, Response, "tag");
+                return View("/Views/Error/TagNotFound.cshtml", errorModel);
+            }
         }
 
         [HttpPost]
         [Authorize(Roles = "moderator")]
         public async Task<IActionResult> Delete(Guid id)
         {
-            var tag = await tagRepo.GetByIdAsync(id);
-            if (tag != null) await tagRepo.DeleteAsync(tag);
-
-            var tags = await tagRepo.GetAll().ToListAsync();
-            return RedirectToAction("AllTags", "Tag");
+            try
+            {
+                var result = await handler.HandleDelete(id);
+                return RedirectToAction("AllTags", "Tag");
+            }
+            catch (TagNotFoundException)
+            {
+                var errorModel = await errorHandler.HandleNotFoundError(id, User, Response, "tag");
+                return View("/Views/Error/TagNotFound.cshtml", errorModel);
+            }
+            
         }
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 using Microsoft.EntityFrameworkCore;
+using NLog.Web.LayoutRenderers;
 using SuperBlog.Data.Repositories;
 using SuperBlog.Exceptions;
 using SuperBlog.Extentions;
@@ -22,6 +23,7 @@ namespace SuperBlog.Services
         private readonly IMapper mapper;
         private readonly ISecurityRepository security;
         private readonly IRepository<Post> postRepo;
+        private readonly ILogger<UserHandler> logger;
 
         public UserHandler(
             UserManager<User> userManager,
@@ -29,7 +31,8 @@ namespace SuperBlog.Services
             RoleManager<Role> roleManager,
             IMapper mapper,
             ISecurityRepository security,
-            IRepository<Post> postRepo)
+            IRepository<Post> postRepo,
+            ILogger<UserHandler> logger)
         {
             this.userManager = userManager;
             this.signInManager = signInManager;
@@ -37,6 +40,7 @@ namespace SuperBlog.Services
             this.mapper = mapper;
             this.security = security;
             this.postRepo = postRepo;
+            this.logger = logger;
         }
 
         public async Task<UserHandlingResult> HandleLogin(LoginViewModel model)
@@ -89,9 +93,12 @@ namespace SuperBlog.Services
             return result;
         }
 
-        public async Task<EditUserViewModel> SetupUpdate(string id)
+        public async Task<EditUserViewModel> SetupUpdate(string id, ClaimsPrincipal principal)
         {
             var user = await userManager.FindByIdAsync(id) ?? throw new UserNotFoundException();
+            var currentUserId = userManager.GetUserId(principal);
+            if (currentUserId != id && !principal.IsInRole("admin")) throw new AccessDeniedException();
+
             var model = mapper.Map<EditUserViewModel>(user);
 
             var roles = roleManager.Roles;
@@ -108,10 +115,12 @@ namespace SuperBlog.Services
             return model;
         }
 
-        public async Task<UserHandlingResult> HandleUpdate(EditUserViewModel model)
+        public async Task<UserHandlingResult> HandleUpdate(EditUserViewModel model, ClaimsPrincipal principal)
         {
             var result = new UserHandlingResult();
             var user = await userManager.FindByIdAsync(model.Id.ToString()) ?? throw new UserNotFoundException();
+            var currentUserId = userManager.GetUserId(principal);
+            if (!principal.IsInRole("admin") && !model.Id.Equals(currentUserId)) throw new AccessDeniedException();
             var existingUser = await userManager.FindByEmailAsync(model.Email);
             if (existingUser != null && existingUser.Id != user.Id)
             {
@@ -163,7 +172,7 @@ namespace SuperBlog.Services
                 user = await userManager.FindByIdAsync(id) ?? throw new UserNotFoundException();
                 if (user.Id == currentUser.Id)
                 {
-                    return new UserViewModel();
+                    return null;
                 }
             }
 
@@ -175,15 +184,10 @@ namespace SuperBlog.Services
         public async Task<UserHandlingResult> HandleDelete(string id, ClaimsPrincipal principal)
         {
             var result = new UserHandlingResult();
-            var user = await userManager.FindByIdAsync(id);
-            var currentUser = await userManager.GetUserAsync(principal);
-            if (user == null) throw new UserNotFoundException();
-            if (currentUser == null || !principal.IsInRole("admin"))
-            {
-                result.AccessDenied = true;
-                return result;
-            }
-            if (user.Id == currentUser.Id) await signInManager.SignOutAsync();
+            var user = await userManager.FindByIdAsync(id) ?? throw new UserNotFoundException();
+            var currentUserId = userManager.GetUserId(principal) ?? throw new UserNotFoundException();
+            if (currentUserId != id && !principal.IsInRole("admin")) throw new AccessDeniedException();
+            if (currentUserId.Equals(user.Id)) await signInManager.SignOutAsync();
             await userManager.DeleteAsync(user);
             result.Success = true;
             return result;
@@ -236,6 +240,14 @@ namespace SuperBlog.Services
             await signInManager.SignOutAsync();
             result.Success = true;
             return result;
+        }
+
+        public async Task<EntityNotFoundViewModel> HandleNotFoundError(HttpResponse response)
+        {
+            response.StatusCode = 404;
+            string message = "Attempt to access non-existent user with unspecified id by anonimous user";
+            logger.LogError(message);
+            return new EntityNotFoundViewModel { Id = "" };
         }
     }
 }

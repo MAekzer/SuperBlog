@@ -6,6 +6,5 @@
         public bool IncorrectLoginOrPassword { get; set; }
         public bool EmailAlreadyExists { get; set; }
         public bool LoginAlreadyExists { get; set; }
-        public bool AccessDenied { get; set; }
     }
 }
