@@ -1,17 +1,8 @@
-﻿using AutoMapper;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Razor.TagHelpers;
-using Microsoft.EntityFrameworkCore;
-using SuperBlog.Data.Repositories;
-using SuperBlog.Exceptions;
-using SuperBlog.Extentions;
-using SuperBlog.Models.Entities;
-using SuperBlog.Models.ViewModels;
+using SuperBlogData.Exceptions;
+using SuperBlogData.Models.ViewModels;
 using SuperBlog.Services;
-using System.Xml.Linq;
 
 namespace SuperBlog.Controllers
 {

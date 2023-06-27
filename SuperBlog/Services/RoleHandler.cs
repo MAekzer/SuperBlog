@@ -1,13 +1,11 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using SuperBlog.Data.Repositories;
-using SuperBlog.Exceptions;
-using SuperBlog.Extentions;
-using SuperBlog.Models.Entities;
-using SuperBlog.Models.ViewModels;
+using SuperBlogData.Repositories;
+using SuperBlogData.Exceptions;
+using SuperBlogData.Extentions;
+using SuperBlogData.Models.Entities;
+using SuperBlogData.Models.ViewModels;
 using SuperBlog.Services.Results;
-using System.Runtime.CompilerServices;
-using System.Security.Claims;
 
 namespace SuperBlog.Services
 {
@@ -16,14 +14,12 @@ namespace SuperBlog.Services
         private readonly UserManager<User> userManager;
         private readonly RoleManager<Role> roleManager;
         private readonly IRepository<Post> postRepo;
-        private readonly ILogger<RoleHandler> logger;
 
-        public RoleHandler(UserManager<User> userManager, RoleManager<Role> roleManager, IRepository<Post> postRepo, ILogger<RoleHandler> logger)
+        public RoleHandler(UserManager<User> userManager, RoleManager<Role> roleManager, IRepository<Post> postRepo)
         {
             this.userManager = userManager;
             this.roleManager = roleManager;
             this.postRepo = postRepo;
-            this.logger = logger;
         }
 
         public async Task<RolesViewModel> SetupRoles()
@@ -94,6 +90,82 @@ namespace SuperBlog.Services
             await roleManager.DeleteAsync(role);
             result.Success = true;
             return result;
+        }
+
+        public async Task CreateRoles()
+        {
+            List<Role> roles = new();
+
+            var admin = new Role("admin", "Администратор",
+                "Высшая роль в приложении. Имеет право на все операции с любыми сущностями"
+            );
+            roles.Add(admin);
+
+            var moderator = new Role("moderator", "Модератор",
+                "Роль модератора приложения. Имеет право на удаление и редактирование любых статей и комментариев"
+            );
+            roles.Add(moderator);
+
+            var user = new Role("user", "Пользователь",
+                "Стандартная роль в приложении. Имеет право на операции со своими статьями, комментариями и профилем"
+            );
+            roles.Add(user);
+
+            IdentityResult roleResult;
+            IConfiguration configuration = new ConfigurationBuilder()
+            .SetBasePath(Directory.GetCurrentDirectory())
+            .AddJsonFile("appsettings.Development.json")
+            .AddJsonFile("appsettings.json")
+            .Build();
+
+            foreach (var role in roles)
+            {
+                var roleExist = await roleManager.RoleExistsAsync(role.Name);
+                if (!roleExist)
+                {
+                    roleResult = await roleManager.CreateAsync(role);
+                }
+            }
+
+            var poweruser = new User
+            {
+                FirstName = configuration["AdminCredentials:FirstName"],
+                LastName = configuration["AdminCredentials:LastName"],
+                UserName = configuration["AdminCredentials:UserName"],
+                Email = configuration["AdminCredentials:Email"],
+            };
+
+            string userPWD = configuration["AdminCredentials:Password"];
+            var _user = await userManager.FindByNameAsync(configuration["AdminCredentials:UserName"]);
+
+            if (_user == null)
+            {
+                var createPowerUser = await userManager.CreateAsync(poweruser, userPWD);
+                if (createPowerUser.Succeeded)
+                {
+                    await userManager.AddToRolesAsync(poweruser, new string[] { "admin", "moderator", "user" });
+                }
+            }
+
+            poweruser = new User
+            {
+                FirstName = configuration["ModeratorCredentials:FirstName"],
+                LastName = configuration["ModeratorCredentials:LastName"],
+                UserName = configuration["ModeratorCredentials:UserName"],
+                Email = configuration["ModeratorCredentials:Email"],
+            };
+
+            userPWD = configuration["ModeratorCredentials:Password"];
+            _user = await userManager.FindByNameAsync(configuration["ModeratorCredentials:UserName"]);
+
+            if (_user == null)
+            {
+                var createPowerUser = await userManager.CreateAsync(poweruser, userPWD);
+                if (createPowerUser.Succeeded)
+                {
+                    await userManager.AddToRolesAsync(poweruser, new string[] { "moderator", "user" });
+                }
+            }
         }
     }
 }

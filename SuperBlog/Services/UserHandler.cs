@@ -4,11 +4,11 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Razor.TagHelpers;
 using Microsoft.EntityFrameworkCore;
 using NLog.Web.LayoutRenderers;
-using SuperBlog.Data.Repositories;
-using SuperBlog.Exceptions;
-using SuperBlog.Extentions;
-using SuperBlog.Models.Entities;
-using SuperBlog.Models.ViewModels;
+using SuperBlogData.Repositories;
+using SuperBlogData.Exceptions;
+using SuperBlogData.Extentions;
+using SuperBlogData.Models.Entities;
+using SuperBlogData.Models.ViewModels;
 using SuperBlog.Services.Results;
 using System.Runtime.CompilerServices;
 using System.Security.Claims;
@@ -21,7 +21,6 @@ namespace SuperBlog.Services
         private readonly SignInManager<User> signInManager;
         private readonly RoleManager<Role> roleManager;
         private readonly IMapper mapper;
-        private readonly ISecurityRepository security;
         private readonly IRepository<Post> postRepo;
         private readonly ILogger<UserHandler> logger;
 
@@ -30,7 +29,6 @@ namespace SuperBlog.Services
             SignInManager<User> signInManager,
             RoleManager<Role> roleManager,
             IMapper mapper,
-            ISecurityRepository security,
             IRepository<Post> postRepo,
             ILogger<UserHandler> logger)
         {
@@ -38,7 +36,6 @@ namespace SuperBlog.Services
             this.signInManager = signInManager;
             this.roleManager = roleManager;
             this.mapper = mapper;
-            this.security = security;
             this.postRepo = postRepo;
             this.logger = logger;
         }
@@ -120,7 +117,7 @@ namespace SuperBlog.Services
             var result = new UserHandlingResult();
             var user = await userManager.FindByIdAsync(model.Id.ToString()) ?? throw new UserNotFoundException();
             var currentUserId = userManager.GetUserId(principal);
-            if (!principal.IsInRole("admin") && !model.Id.Equals(currentUserId)) throw new AccessDeniedException();
+            if (!principal.IsInRole("admin") && currentUserId != model.Id.ToString()) throw new AccessDeniedException();
             var existingUser = await userManager.FindByEmailAsync(model.Email);
             if (existingUser != null && existingUser.Id != user.Id)
             {
@@ -187,7 +184,7 @@ namespace SuperBlog.Services
             var user = await userManager.FindByIdAsync(id) ?? throw new UserNotFoundException();
             var currentUserId = userManager.GetUserId(principal) ?? throw new UserNotFoundException();
             if (currentUserId != id && !principal.IsInRole("admin")) throw new AccessDeniedException();
-            if (currentUserId.Equals(user.Id)) await signInManager.SignOutAsync();
+            if (user.Id.Equals(currentUserId)) await signInManager.SignOutAsync();
             await userManager.DeleteAsync(user);
             result.Success = true;
             return result;
@@ -196,7 +193,7 @@ namespace SuperBlog.Services
         public async Task<UsersViewModel> SetupUsers()
         {
             var model = new UsersViewModel();
-            var users = userManager.Users;
+            var users = await userManager.Users.ToListAsync();
             foreach (var user in users)
             {
                 int postCount = await postRepo.GetAll().Where(p => p.User.Id == user.Id).CountAsync();
@@ -214,17 +211,18 @@ namespace SuperBlog.Services
             switch (model.SearchCriterion)
             {
                 case SearchCriteria.Имя:
-                    users = users.Where(u => u.FirstName.Contains(param) || u.LastName.Contains(param) || u.MiddleName.Contains(param));
+                    users = users.Where(u => u.NormalizedFullName.Contains(param.ToUpper()));
                     break;
                 case SearchCriteria.Email:
-                    users = users.Where(u => u.Email.Contains(param));
+                    users = users.Where(u => u.NormalizedEmail.Contains(param.ToUpper()));
                     break;
                 case SearchCriteria.Логин:
-                    users = users.Where(u => u.UserName.Contains(param));
+                    users = users.Where(u => u.NormalizedUserName.Contains(param.ToUpper()));
                     break;
             }
             model.Users.Clear();
-            foreach (var user in users)
+            var result = await users.ToListAsync();
+            foreach (var user in result)
             {
                 int postCount = await postRepo.GetAll().Where(p => p.User.Id == user.Id).CountAsync();
                 var roles = await roleManager.GetRoles(user, userManager);

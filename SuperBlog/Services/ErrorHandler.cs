@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
-using SuperBlog.Models.Entities;
-using SuperBlog.Models.ViewModels;
+using SuperBlogData.Models.Entities;
+using SuperBlogData.Models.ViewModels;
 using System.Security.Claims;
 
 namespace SuperBlog.Services

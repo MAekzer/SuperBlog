@@ -1,10 +1,8 @@
-﻿using AutoMapper;
-using Microsoft.AspNetCore.Diagnostics;
+﻿using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using SuperBlog.Models;
-using SuperBlog.Models.Entities;
-using SuperBlog.Models.ViewModels;
+using SuperBlogData.Models.Entities;
+using SuperBlogData.Models.ViewModels;
 using System.Diagnostics;
 
 namespace SuperBlog.Controllers

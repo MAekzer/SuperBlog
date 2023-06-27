@@ -1,11 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SuperBlog.Data.Repositories;
-using SuperBlog.Exceptions;
-using SuperBlog.Models.Entities;
-using SuperBlog.Models.ViewModels;
+using SuperBlogData.Exceptions;
+using SuperBlogData.Models.ViewModels;
 using SuperBlog.Services;
 
 namespace SuperBlog.Controllers

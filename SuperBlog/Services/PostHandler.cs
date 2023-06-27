@@ -1,11 +1,11 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using SuperBlog.Data.Repositories;
-using SuperBlog.Exceptions;
-using SuperBlog.Extentions;
-using SuperBlog.Models.Entities;
-using SuperBlog.Models.ViewModels;
+using SuperBlogData.Repositories;
+using SuperBlogData.Exceptions;
+using SuperBlogData.Extentions;
+using SuperBlogData.Models.Entities;
+using SuperBlogData.Models.ViewModels;
 using SuperBlog.Services.Results;
 using System.Security.Claims;
 
@@ -124,7 +124,7 @@ namespace SuperBlog.Services
             var post = await postRepo.GetByIdAsync(id);
             if (string.IsNullOrEmpty(userId)) throw new UserNotFoundException();
             if (post is null) throw new PostNotFoundException();
-            if (!userId.Equals(post.UserId) && !principal.IsInRole("moderator")) throw new AccessDeniedException();
+            if (userId != post.UserId.ToString() && !principal.IsInRole("moderator")) throw new AccessDeniedException();
             await postRepo.DeleteAsync(post);
             result.Success = true;
             return result;
@@ -148,10 +148,10 @@ namespace SuperBlog.Services
         public async Task<PostsViewModel> SetupPosts(PostsViewModel model, ClaimsPrincipal principal)
         {
             var user = await userManager.GetUserAsync(principal);
-            IQueryable<Post> posts = postRepo.GetAll().Include(p => p.User).Include(p => p.Tags);
+            var posts = await postRepo.GetAll().Include(p => p.User).Include(p => p.Tags).ToListAsync();
 
             if (!string.IsNullOrEmpty(model.SearchPrompt))
-                posts = postRepo.GetAll().Where(p => p.Title.Contains(model.SearchPrompt));
+                posts = postRepo.GetAll().Where(p => p.Title.Contains(model.SearchPrompt)).ToList();
 
             if (model.Tags.Count > 0)
             {
@@ -160,11 +160,11 @@ namespace SuperBlog.Services
                 {
                     if (tagModel.IsChecked)
                     {
-                        posts = posts.Where(p => p.Tags.Any(t => t.Id == tagModel.Id));
+                        posts = posts.Where(p => p.Tags.Any(t => t.Id == tagModel.Id)).ToList();
                     }
                 }
             }
-            model.Posts = await posts.ToListAsync();
+            model.Posts = posts;
             model.User = user;
             return model;
         }

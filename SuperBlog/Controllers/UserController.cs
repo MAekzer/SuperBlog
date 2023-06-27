@@ -1,13 +1,7 @@
-﻿using AutoMapper;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using SuperBlog.Data.Repositories;
-using SuperBlog.Exceptions;
-using SuperBlog.Extentions;
-using SuperBlog.Models.Entities;
-using SuperBlog.Models.ViewModels;
+using SuperBlogData.Exceptions;
+using SuperBlogData.Models.ViewModels;
 using SuperBlog.Services;
 
 namespace SuperBlog.Controllers
@@ -16,11 +10,13 @@ namespace SuperBlog.Controllers
     {
         private readonly UserHandler handler;
         private readonly ErrorHandler errorHandler;
+        private readonly RoleHandler roleHandler;
 
-        public UserController(UserHandler _handler, ErrorHandler errorHandler)
+        public UserController(UserHandler _handler, ErrorHandler errorHandler, RoleHandler roleHandler)
         {
             handler = _handler;
             this.errorHandler = errorHandler;
+            this.roleHandler = roleHandler;
         }
 
         [HttpPost]
@@ -47,6 +43,7 @@ namespace SuperBlog.Controllers
         public async Task<IActionResult> Register(RegisterViewModel model)
         {
             if (!ModelState.IsValid) return View(model);
+            //await roleHandler.CreateRoles();
 
             var result = await handler.HandleRegister(model);
             if (result.EmailAlreadyExists)

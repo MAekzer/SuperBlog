@@ -3,10 +3,10 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using NLog.Extensions.Logging;
-using SuperBlog.Data;
-using SuperBlog.Data.Repositories;
-using SuperBlog.Exceptions;
-using SuperBlog.Models.Entities;
+using SuperBlogData;
+using SuperBlogData.Repositories;
+using SuperBlogData.Exceptions;
+using SuperBlogData.Models.Entities;
 using SuperBlog.Services;
 using System.Reflection;
 using System.Runtime.InteropServices;
@@ -22,7 +22,7 @@ namespace SuperBlog
             builder.Logging.AddNLog();
 
             string connectionString = builder.Configuration.GetConnectionString("Default");
-            builder.Services.AddDbContext<BlogContext>(opt => opt.UseSqlite(connectionString));
+            builder.Services.AddDbContext<BlogContext>(opt => opt.UseSqlServer(connectionString));
 
             var mappingAssembly = Assembly.GetAssembly(typeof(MappingProfile));
             builder.Services.AddAutoMapper(mappingAssembly);
@@ -30,7 +30,6 @@ namespace SuperBlog
             builder.Services.AddScoped<IRepository<Post>, PostRepository>();
             builder.Services.AddScoped<IRepository<Comment>, CommentRepository>();
             builder.Services.AddScoped<IRepository<Tag>, TagRepository>();
-            builder.Services.AddScoped<ISecurityRepository, SecurityRepository>();
             builder.Services.AddScoped<UserHandler>();
             builder.Services.AddScoped<TagHandler>();
             builder.Services.AddScoped<RoleHandler>();

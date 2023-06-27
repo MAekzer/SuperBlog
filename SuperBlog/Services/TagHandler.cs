@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using SuperBlog.Data.Repositories;
-using SuperBlog.Exceptions;
-using SuperBlog.Models.Entities;
-using SuperBlog.Models.ViewModels;
+using SuperBlogData.Repositories;
+using SuperBlogData.Exceptions;
+using SuperBlogData.Models.Entities;
+using SuperBlogData.Models.ViewModels;
 using SuperBlog.Services.Results;
 using System.Security.Claims;
 using System.Security.Cryptography.Xml;

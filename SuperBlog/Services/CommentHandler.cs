@@ -1,11 +1,11 @@
 ﻿using AutoMapper;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
-using SuperBlog.Data.Repositories;
-using SuperBlog.Exceptions;
-using SuperBlog.Extentions;
-using SuperBlog.Models.Entities;
-using SuperBlog.Models.ViewModels;
+using SuperBlogData.Repositories;
+using SuperBlogData.Exceptions;
+using SuperBlogData.Extentions;
+using SuperBlogData.Models.Entities;
+using SuperBlogData.Models.ViewModels;
 using SuperBlog.Services.Results;
 using System.Security.Claims;
 
@@ -30,7 +30,7 @@ namespace SuperBlog.Services
         {
             var comment = await commentRepo.GetByIdAsync(id) ?? throw new CommentNotFoundException();
             var userId = userManager.GetUserId(principal);
-            if (!userId.Equals(comment.UserId) && !principal.IsInRole("moderator")) throw new AccessDeniedException();
+            if (comment.UserId.ToString() != userId && !principal.IsInRole("moderator")) throw new AccessDeniedException();
             var post = await postRepo.GetAll().Include(p => p.User).Include(p => p.Tags).FirstOrDefaultAsync(p => p.Id == comment.PostId)
                         ?? throw new PostNotFoundException();
             var postmodel = mapper.Map<PostViewModel>(post);
@@ -43,7 +43,7 @@ namespace SuperBlog.Services
             var result = new CommentHandlingResult();
             var comment = await commentRepo.GetByIdAsync(model.Id) ?? throw new CommentNotFoundException();
             var userId = userManager.GetUserId(principal);
-            if (!userId.Equals(comment.UserId) && !principal.IsInRole("moderator")) throw new AccessDeniedException();
+            if (comment.UserId.ToString() != userId && !principal.IsInRole("moderator")) throw new AccessDeniedException();
             comment.Update(model);
             await commentRepo.UpdateAsync(comment);
             result.Success = true;
@@ -82,7 +82,7 @@ namespace SuperBlog.Services
             var result = new CommentHandlingResult();
             var comment = await commentRepo.GetByIdAsync(id) ?? throw new CommentNotFoundException();
             var userId = userManager.GetUserId(principal) ?? throw new UserNotFoundException();
-            if (!userId.Equals(comment.UserId) && !principal.IsInRole("moderator")) throw new AccessDeniedException();
+            if (comment.UserId.ToString() != userId && !principal.IsInRole("moderator")) throw new AccessDeniedException();
             result.PostId = comment.PostId;
             await commentRepo.DeleteAsync(comment);
             result.Success = true;

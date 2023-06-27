@@ -1,6 +1,6 @@
 ﻿using AutoMapper;
-using SuperBlog.Models.Entities;
-using SuperBlog.Models.ViewModels;
+using SuperBlogData.Models.Entities;
+using SuperBlogData.Models.ViewModels;
 
 namespace SuperBlog
 {
@@ -9,7 +9,9 @@ namespace SuperBlog
         public MappingProfile() : base()
         {
             CreateMap<RegisterViewModel, User>()
-                .ForMember(u => u.BirthDate, opt => opt.MapFrom(m => m.MakeBirthDate()));
+                .ForMember(u => u.BirthDate, opt => opt.MapFrom(m => m.MakeBirthDate()))
+                .ForMember(u => u.FullName, opt => opt.MapFrom(m => m.MakeFullName()))
+                .ForMember(u => u.NormalizedFullName, opt => opt.MapFrom(m => m.MakeFullName().ToUpper()));
             CreateMap<CreatePostViewModel, Post>()
                 .ForMember(p => p.Tags, opt => opt.MapFrom(m => new List<Tag>()))
                 .ForMember(p => p.Id, opt => opt.MapFrom(m => Guid.NewGuid()))
