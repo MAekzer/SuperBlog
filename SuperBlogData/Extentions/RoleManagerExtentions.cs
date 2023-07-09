@@ -19,5 +19,20 @@ namespace SuperBlogData.Extentions
 
             return userRoles;
         }
+
+        public static async Task<List<Guid>> GetRoleIds(this RoleManager<Role> roleManager, User user, UserManager<User> userManager)
+        {
+            var userRoles = new List<Guid>();
+            var roles = roleManager.Roles;
+            var roleNames = await userManager.GetRolesAsync(user);
+
+            foreach (var role in roles)
+            {
+                if (roleNames.Contains(role.Name))
+                    userRoles.Add(role.Id);
+            }
+
+            return userRoles;
+        }
     }
 }

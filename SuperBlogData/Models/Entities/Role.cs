@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using SuperBlogData.Models.Requests;
 using SuperBlogData.Models.ViewModels;
 
 namespace SuperBlogData.Models.Entities
@@ -19,6 +20,13 @@ namespace SuperBlogData.Models.Entities
             Name = model.Name;
             Description = model.Description;
             DisplayName = model.DisplayName;
+        }
+
+        public void Update(RolePutRequest request)
+        {
+            Name = request.Name;
+            Description = request.Description;
+            DisplayName = request.DisplayName;
         }
     }
 }

@@ -15,7 +15,7 @@ namespace SuperBlogData.Models.ViewModels
         public string? MiddleName { get; set; }
         [Required(ErrorMessage = "Поле Никнейм обязательно для заполнения")]
         [DisplayName("Никнейм")]
-        [MinLength(3, ErrorMessage = "Никнейм не может короче быть чем 3 символа")]
+        [MinLength(5, ErrorMessage = "Никнейм не может короче быть чем 5 символов")]
         [MaxLength(20, ErrorMessage = "Никнейм не может короче быть чем 20 символов")]
         public string UserName { get; set; }
         [DisplayName("Пароль")]

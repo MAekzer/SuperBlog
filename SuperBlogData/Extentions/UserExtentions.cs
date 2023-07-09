@@ -1,4 +1,5 @@
 ﻿using SuperBlogData.Models.Entities;
+using SuperBlogData.Models.Requests;
 using SuperBlogData.Models.ViewModels;
 
 namespace SuperBlogData.Extentions
@@ -20,5 +21,19 @@ namespace SuperBlogData.Extentions
             user.NormalizedFullName = fullname.ToUpper();
         }
         
+        public static void Update(this User user, UserPutRequest request)
+        {
+            user.UserName = request.UserName;
+            user.Email = request.Email;
+            user.FirstName = request.FirstName;
+            user.LastName = request.LastName;
+            user.MiddleName = request.MiddleName;
+            user.BirthDate = request.BirthDate;
+            user.About = request.About;
+
+            var fullname = user.GetFullName();
+            user.FullName = fullname;
+            user.NormalizedFullName = fullname.ToUpper();
+        }
     }
 }

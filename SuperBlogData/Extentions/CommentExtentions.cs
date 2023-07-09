@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore.Update.Internal;
 using SuperBlogData.Models.Entities;
+using SuperBlogData.Models.Requests;
 using SuperBlogData.Models.ViewModels;
 
 namespace SuperBlogData.Extentions
@@ -12,6 +13,14 @@ namespace SuperBlogData.Extentions
             comment.IsRedacted = true;
             comment.RedactionTime = DateTime.Now;
             comment.Content = model.Content;
+        }
+
+        public static void Update(this Comment comment, CommentPutRequest request)
+        {
+            if (request is null) return;
+            comment.IsRedacted = true;
+            comment.RedactionTime = DateTime.Now;
+            comment.Content = request.Content;
         }
     }
 }
